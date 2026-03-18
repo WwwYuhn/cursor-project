@@ -1,0 +1,9 @@
+.DS_Store
+.cursor/
+.vscode/
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.local
