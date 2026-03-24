@@ -1,0 +1,1482 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D UI Forge - Pure HTML</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #09090b;
+      }
+
+      body {
+        color: #fafafa;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      canvas {
+        touch-action: none;
+      }
+
+      .range {
+        width: 100%;
+        accent-color: #38bdf8;
+      }
+
+      .glass-card {
+        background: rgba(24, 24, 27, 0.86);
+        backdrop-filter: blur(16px);
+      }
+    </style>
+  </head>
+  <body class="bg-zinc-950 text-zinc-50">
+    <div id="app" class="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.12),_transparent_26%)]">
+      <header class="fixed inset-x-0 top-0 z-50 border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur">
+        <div class="mx-auto flex max-w-[1800px] flex-wrap items-center gap-3 px-4 py-3">
+          <div class="mr-auto">
+            <div class="text-lg font-semibold tracking-tight" data-i18n="app.title">3D UI Forge</div>
+            <div class="text-xs text-zinc-400" data-i18n="app.subtitle">伪3D UI 交互设计工具</div>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button
+              id="importBtn"
+              class="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 transition hover:bg-zinc-800"
+              data-i18n="toolbar.import"
+            >
+              📤 导入原型图
+            </button>
+            <button
+              id="aiBtn"
+              class="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 transition hover:bg-zinc-800"
+              data-i18n="toolbar.ai"
+            >
+              ✨ AI 一键识别
+            </button>
+            <button
+              id="manualBtn"
+              class="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 transition hover:bg-zinc-800"
+              data-i18n="toolbar.manualSelect"
+            >
+              ⬛ 手动框选
+            </button>
+            <button
+              id="view2dBtn"
+              class="rounded-xl border border-sky-500 bg-sky-500 px-4 py-2 text-sm text-white transition hover:bg-sky-400"
+              data-i18n="toolbar.editor2d"
+            >
+              2D 编辑器
+            </button>
+            <button
+              id="view3dBtn"
+              class="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 transition hover:bg-zinc-800"
+              data-i18n="toolbar.preview3d"
+            >
+              3D 预览
+            </button>
+            <button
+              id="exportBtn"
+              class="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 transition hover:bg-zinc-800"
+              data-i18n="toolbar.export"
+            >
+              📦 导出单文件
+            </button>
+            <button
+              id="langBtn"
+              class="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 transition hover:bg-zinc-800"
+            >
+              🌐 ZH
+            </button>
+          </div>
+
+          <input id="fileInput" type="file" accept="image/*" class="hidden" />
+        </div>
+      </header>
+
+      <main class="mx-auto max-w-[1800px] px-4 pb-28 pt-24">
+        <section class="glass-card mb-4 rounded-2xl border border-zinc-800 p-4">
+          <div class="mb-2 text-sm font-semibold text-zinc-100" data-i18n="usage.title">使用说明 / How To Use</div>
+          <div class="text-sm leading-6 text-zinc-300" id="usageText"></div>
+        </section>
+
+        <div class="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px]">
+          <aside class="glass-card rounded-2xl border border-zinc-800">
+            <div class="border-b border-zinc-800 p-5">
+              <div class="text-base font-semibold" data-i18n="panels.properties">属性面板</div>
+              <div class="mt-2 text-sm text-zinc-400" id="propertyDescription"></div>
+            </div>
+            <div class="p-5" id="propertyPanel"></div>
+          </aside>
+
+          <section class="min-w-0">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div class="flex gap-2">
+                <button
+                  id="tab2dBtn"
+                  class="rounded-xl border border-sky-500 bg-sky-500 px-4 py-2 text-sm text-white transition hover:bg-sky-400"
+                  data-i18n="toolbar.editor2d"
+                >
+                  2D 编辑器
+                </button>
+                <button
+                  id="tab3dBtn"
+                  class="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 transition hover:bg-zinc-800"
+                  data-i18n="toolbar.preview3d"
+                >
+                  3D 预览
+                </button>
+              </div>
+
+              <div class="flex flex-wrap gap-2">
+                <span class="rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-xs text-zinc-300" data-i18n="tips.shift">
+                  Shift + 拖拽
+                </span>
+                <span class="rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-xs text-zinc-300" data-i18n="tips.manual">
+                  手动框选
+                </span>
+                <span class="rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-xs text-zinc-300" data-i18n="tips.sync">
+                  实时同步
+                </span>
+              </div>
+            </div>
+
+            <section id="editor2dSection" class="glass-card rounded-2xl border border-zinc-800">
+              <div class="border-b border-zinc-800 p-5">
+                <div class="text-base font-semibold" data-i18n="canvas.title">2D 编辑画布</div>
+                <div class="mt-2 text-sm text-zinc-400" data-i18n="canvas.subtitle">
+                  上传 Figma 截图、手绘稿或设计图后，可按住 Shift + 拖拽框选元素。
+                </div>
+              </div>
+              <div class="p-5">
+                <div class="mb-3 flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-400">
+                  <div id="canvasStateText"></div>
+                  <div id="canvasHintText"></div>
+                </div>
+
+                <div
+                  id="dropZone"
+                  class="relative overflow-hidden rounded-2xl border border-zinc-800 bg-[#050508] p-3 transition"
+                >
+                  <div class="overflow-auto rounded-xl border border-zinc-800 bg-zinc-950/60 p-3">
+                    <canvas id="editorCanvas" width="920" height="560" class="mx-auto block max-w-full rounded-xl"></canvas>
+                  </div>
+
+                  <div
+                    id="dropOverlay"
+                    class="pointer-events-none absolute inset-0 hidden items-center justify-center bg-sky-500/10 backdrop-blur-sm"
+                  >
+                    <div class="rounded-2xl border border-sky-500/50 bg-zinc-950/90 px-8 py-6 text-center shadow-2xl">
+                      <div class="text-sm font-medium text-zinc-100" id="dropOverlayText"></div>
+                      <div class="mt-2 text-xs text-zinc-500" data-i18n="canvas.dropHint">
+                        支持拖拽上传图片，也支持点击顶部导入按钮。
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    id="emptyCanvasOverlay"
+                    class="pointer-events-none absolute inset-0 flex items-center justify-center"
+                  >
+                    <div class="rounded-2xl border border-dashed border-zinc-700 bg-zinc-950/90 px-8 py-6 text-center shadow-2xl">
+                      <div class="text-sm font-medium text-zinc-100" data-i18n="canvas.empty">
+                        把设计图拖进来，或者点击顶部按钮导入。
+                      </div>
+                      <div class="mt-2 text-xs text-zinc-500" data-i18n="canvas.dropHint">
+                        支持拖拽上传图片，也支持点击顶部导入按钮。
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section id="preview3dSection" class="glass-card hidden rounded-2xl border border-zinc-800">
+              <div class="border-b border-zinc-800 p-5">
+                <div class="text-base font-semibold" data-i18n="preview.title">3D 预览</div>
+                <div class="mt-2 text-sm text-zinc-400" data-i18n="preview.subtitle">
+                  可拖拽旋转、缩放查看伪3D界面。
+                </div>
+              </div>
+              <div class="relative h-[680px] overflow-hidden rounded-b-2xl bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.12),_rgba(9,9,11,1)_38%)]">
+                <div id="threeContainer" class="h-full w-full"></div>
+                <div
+                  id="emptyPreviewOverlay"
+                  class="pointer-events-none absolute inset-0 flex items-center justify-center"
+                >
+                  <div class="rounded-2xl border border-zinc-800 bg-zinc-950/85 px-8 py-6 text-center text-sm text-zinc-300 backdrop-blur">
+                    <span data-i18n="preview.empty">导入图片后，这里会生成带厚度与圆角的 3D 预览。</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </section>
+
+          <aside class="glass-card rounded-2xl border border-zinc-800">
+            <div class="border-b border-zinc-800 p-5">
+              <div class="text-base font-semibold" data-i18n="panels.layers">图层列表</div>
+              <div class="mt-2 text-sm text-zinc-400" id="layerSummary"></div>
+            </div>
+            <div class="p-5" id="layerList"></div>
+          </aside>
+        </div>
+      </main>
+
+      <div class="fixed bottom-6 right-6 z-50 w-[min(440px,calc(100vw-32px))] xl:w-[420px]">
+        <div class="glass-card rounded-2xl border border-zinc-800 shadow-2xl shadow-black/40">
+          <div class="border-b border-zinc-800 p-5">
+            <div class="text-base font-semibold" data-i18n="panels.export">导出</div>
+            <div class="mt-2 text-sm text-zinc-400" id="statusText"></div>
+          </div>
+          <div class="flex flex-wrap gap-3 p-5">
+            <button
+              id="floatingExportBtn"
+              class="rounded-xl border border-sky-500 bg-sky-500 px-4 py-2 text-sm text-white transition hover:bg-sky-400"
+              data-i18n="toolbar.export"
+            >
+              📦 导出单文件
+            </button>
+            <button
+              id="snapshotBtn"
+              class="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 transition hover:bg-zinc-800"
+              data-i18n="toolbar.snapshot"
+            >
+              🖼 导出截图
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+      const I18N = {
+        zh: {
+          app: {
+            title: "3D UI Forge",
+            subtitle: "伪3D UI 交互设计工具"
+          },
+          usage: {
+            title: "使用说明 / How To Use",
+            text:
+              "中文：1. 点击“📤 导入原型图”导入 UI 图片。2. 按住 Shift 在 2D 画布上拖拽框选组件，或先开启“⬛ 手动框选”再拖拽。3. 选中图层后可实时调节厚度、斜面强度、圆角半径。4. 切换到 3D 预览查看伪3D效果并拖拽旋转。5. “📦 导出单文件”会导出当前状态的完整 HTML 文件。 | English: 1. Import a UI image. 2. Hold Shift and drag on the 2D canvas, or enable manual select first. 3. Adjust thickness, bevel, and radius in real time. 4. Switch to 3D Preview and orbit the scene. 5. Export will download a self-contained single HTML file."
+          },
+          toolbar: {
+            import: "📤 导入原型图",
+            ai: "✨ AI 一键识别",
+            manualSelect: "⬛ 手动框选",
+            editor2d: "2D 编辑器",
+            preview3d: "3D 预览",
+            export: "📦 导出单文件",
+            snapshot: "🖼 导出截图"
+          },
+          panels: {
+            properties: "属性面板",
+            layers: "图层列表",
+            export: "导出"
+          },
+          canvas: {
+            title: "2D 编辑画布",
+            subtitle: "上传 Figma 截图、手绘稿或设计图后，可按住 Shift + 拖拽框选元素。",
+            empty: "把设计图拖进来，或者点击顶部按钮导入。",
+            loaded: "图片已加载，可开始框选组件。",
+            dropActive: "松开鼠标完成上传",
+            dropHint: "支持拖拽上传图片，也支持点击顶部导入按钮。",
+            modeOn: "框选模式已开启，点击画布拖拽即可创建伪3D图层。",
+            modeOff: "也支持按住 Shift 直接拖拽，不必一直开启按钮。"
+          },
+          preview: {
+            title: "3D 预览",
+            subtitle: "可拖拽旋转、缩放查看伪3D界面。",
+            empty: "导入图片后，这里会生成带厚度与圆角的 3D 预览。"
+          },
+          panelsText: {
+            noSelection: "选中一个伪3D图层后，可在这里修改厚度、斜面和圆角。",
+            noLayers: "还没有图层，先导入图片并按住 Shift 拖拽进行框选。"
+          },
+          properties: {
+            thickness: "厚度",
+            bevel: "斜面强度",
+            radius: "圆角半径",
+            material: "材质"
+          },
+          material: {
+            matte: "Matte",
+            glossy: "Glossy",
+            glass: "Glass",
+            metal: "Metal"
+          },
+          layer: {
+            visible: "显示中",
+            hidden: "已隐藏",
+            show: "显示",
+            hide: "隐藏",
+            moveUp: "上移",
+            moveDown: "下移",
+            delete: "删除"
+          },
+          tips: {
+            shift: "Shift + 拖拽",
+            manual: "手动框选",
+            sync: "实时同步"
+          },
+          status: {
+            ready: "这是一个完全纯 HTML 单文件版本，无需安装即可使用。",
+            imported: "图片已导入，旧图层已清空。",
+            exported: "已导出当前状态的单文件 HTML。",
+            snapshot: "当前视图截图已导出。",
+            emptyExport: "当前还没有内容可导出。"
+          },
+          alert: {
+            ai: "AI 识别功能已准备好，后续可接入 GPT-4o 或视觉模型。",
+            exportIntro: "这是单文件版本，导出后得到的是可直接打开的独立 HTML 文件。"
+          }
+        },
+        en: {
+          app: {
+            title: "3D UI Forge",
+            subtitle: "Pseudo-3D UI interaction design tool"
+          },
+          usage: {
+            title: "Usage / How To Use",
+            text:
+              "English: 1. Click Import to load a UI image. 2. Hold Shift and drag on the 2D canvas, or enable Manual Select first. 3. Adjust thickness, bevel strength, and corner radius in real time. 4. Switch to 3D Preview and orbit the scene. 5. Export downloads a self-contained single HTML file. | 中文：点击导入图片后，可在 2D 画布中按住 Shift 拖拽框选组件，并在左侧实时调整厚度、斜面和圆角，再切换到 3D 预览查看效果。"
+          },
+          toolbar: {
+            import: "📤 Import Image",
+            ai: "✨ AI Detect",
+            manualSelect: "⬛ Manual Select",
+            editor2d: "2D Editor",
+            preview3d: "3D Preview",
+            export: "📦 Export Single HTML",
+            snapshot: "🖼 Export Snapshot"
+          },
+          panels: {
+            properties: "Properties",
+            layers: "Layers",
+            export: "Export"
+          },
+          canvas: {
+            title: "2D Canvas",
+            subtitle: "Upload a Figma screenshot, sketch, or design image, then hold Shift and drag to select elements.",
+            empty: "Drop an image here or click the import button above.",
+            loaded: "Image loaded. Start selecting components.",
+            dropActive: "Release to upload",
+            dropHint: "Drag and drop is supported, and you can also click the import button.",
+            modeOn: "Selection mode is enabled. Drag on the canvas to create pseudo-3D layers.",
+            modeOff: "You can also hold Shift and drag without keeping the mode enabled."
+          },
+          preview: {
+            title: "3D Preview",
+            subtitle: "Drag to orbit and zoom the pseudo-3D interface.",
+            empty: "After importing an image, a 3D preview with thickness and rounded corners will appear here."
+          },
+          panelsText: {
+            noSelection: "Select a pseudo-3D layer to adjust thickness, bevel, and corner radius.",
+            noLayers: "No layers yet. Import an image first, then hold Shift and drag to select."
+          },
+          properties: {
+            thickness: "Thickness",
+            bevel: "Bevel Strength",
+            radius: "Corner Radius",
+            material: "Material"
+          },
+          material: {
+            matte: "Matte",
+            glossy: "Glossy",
+            glass: "Glass",
+            metal: "Metal"
+          },
+          layer: {
+            visible: "Visible",
+            hidden: "Hidden",
+            show: "Show",
+            hide: "Hide",
+            moveUp: "Move Up",
+            moveDown: "Move Down",
+            delete: "Delete"
+          },
+          tips: {
+            shift: "Shift + Drag",
+            manual: "Manual Select",
+            sync: "Live Sync"
+          },
+          status: {
+            ready: "This is a fully pure single HTML version. No installation is required.",
+            imported: "Image imported. Previous layers were cleared.",
+            exported: "The current state was exported as a self-contained HTML file.",
+            snapshot: "A snapshot of the current view has been exported.",
+            emptyExport: "There is no content to export yet."
+          },
+          alert: {
+            ai: "AI recognition is ready. You can connect GPT-4o or another vision model later.",
+            exportIntro: "This is a single-file build. Export will generate a standalone HTML file."
+          }
+        }
+      };
+
+      const appState = {
+        lang: "zh",
+        activeView: "2d",
+        selectionMode: false,
+        sourceImageUrl: null,
+        sourceImage: null,
+        imagePlacement: null,
+        layers: [],
+        selectedLayerId: null,
+        history: [],
+        future: [],
+        status: "",
+        skipHistory: false
+      };
+
+      const elements = {
+        importBtn: document.getElementById("importBtn"),
+        aiBtn: document.getElementById("aiBtn"),
+        manualBtn: document.getElementById("manualBtn"),
+        view2dBtn: document.getElementById("view2dBtn"),
+        view3dBtn: document.getElementById("view3dBtn"),
+        tab2dBtn: document.getElementById("tab2dBtn"),
+        tab3dBtn: document.getElementById("tab3dBtn"),
+        exportBtn: document.getElementById("exportBtn"),
+        floatingExportBtn: document.getElementById("floatingExportBtn"),
+        snapshotBtn: document.getElementById("snapshotBtn"),
+        langBtn: document.getElementById("langBtn"),
+        fileInput: document.getElementById("fileInput"),
+        editor2dSection: document.getElementById("editor2dSection"),
+        preview3dSection: document.getElementById("preview3dSection"),
+        propertyPanel: document.getElementById("propertyPanel"),
+        propertyDescription: document.getElementById("propertyDescription"),
+        layerList: document.getElementById("layerList"),
+        layerSummary: document.getElementById("layerSummary"),
+        usageText: document.getElementById("usageText"),
+        canvasStateText: document.getElementById("canvasStateText"),
+        canvasHintText: document.getElementById("canvasHintText"),
+        statusText: document.getElementById("statusText"),
+        dropZone: document.getElementById("dropZone"),
+        dropOverlay: document.getElementById("dropOverlay"),
+        dropOverlayText: document.getElementById("dropOverlayText"),
+        emptyCanvasOverlay: document.getElementById("emptyCanvasOverlay"),
+        emptyPreviewOverlay: document.getElementById("emptyPreviewOverlay"),
+        threeContainer: document.getElementById("threeContainer")
+      };
+
+      const CANVAS_WIDTH = 920;
+      const CANVAS_HEIGHT = 560;
+      const PHONE_WIDTH = 5;
+      const PHONE_HEIGHT = 9.6;
+
+      const fabricCanvas = new fabric.Canvas("editorCanvas", {
+        width: CANVAS_WIDTH,
+        height: CANVAS_HEIGHT,
+        backgroundColor: "#09090b",
+        selection: false,
+        preserveObjectStacking: true
+      });
+
+      let backgroundFabricImage = null;
+      let activeSelectionRect = null;
+      let dragStartPoint = null;
+      let isSelecting = false;
+      const layerOverlayMap = new Map();
+
+      const threeState = {
+        renderer: null,
+        scene: null,
+        camera: null,
+        controls: null,
+        previewRoot: null,
+        rootGroup: null
+      };
+
+      function t(path) {
+        return path.split(".").reduce((acc, key) => acc && acc[key], I18N[appState.lang]) || path;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      function cloneLayers(layers) {
+        return JSON.parse(JSON.stringify(layers));
+      }
+
+      function createSnapshot() {
+        return {
+          layers: cloneLayers(appState.layers),
+          selectedLayerId: appState.selectedLayerId
+        };
+      }
+
+      function pushHistory() {
+        if (appState.skipHistory) {
+          return;
+        }
+        appState.history.push(createSnapshot());
+        if (appState.history.length > 100) {
+          appState.history.shift();
+        }
+        appState.future = [];
+      }
+
+      function setStatus(text) {
+        appState.status = text;
+        elements.statusText.textContent = text || t("status.ready");
+      }
+
+      function setActiveView(view) {
+        appState.activeView = view;
+        const is2d = view === "2d";
+        elements.editor2dSection.classList.toggle("hidden", !is2d);
+        elements.preview3dSection.classList.toggle("hidden", is2d);
+
+        [elements.view2dBtn, elements.tab2dBtn].forEach((button) => {
+          button.className = is2d
+            ? "rounded-xl border border-sky-500 bg-sky-500 px-4 py-2 text-sm text-white transition hover:bg-sky-400"
+            : "rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 transition hover:bg-zinc-800";
+        });
+
+        [elements.view3dBtn, elements.tab3dBtn].forEach((button) => {
+          button.className = !is2d
+            ? "rounded-xl border border-sky-500 bg-sky-500 px-4 py-2 text-sm text-white transition hover:bg-sky-400"
+            : "rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 transition hover:bg-zinc-800";
+        });
+      }
+
+      function setSelectionMode(active) {
+        appState.selectionMode = active;
+        elements.manualBtn.className = active
+          ? "rounded-xl border border-sky-500 bg-sky-500 px-4 py-2 text-sm text-white transition hover:bg-sky-400"
+          : "rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-100 transition hover:bg-zinc-800";
+        renderStaticText();
+      }
+
+      function applyLanguage() {
+        document.documentElement.lang = appState.lang === "zh" ? "zh-CN" : "en";
+        document.querySelectorAll("[data-i18n]").forEach((node) => {
+          node.textContent = t(node.dataset.i18n);
+        });
+        elements.langBtn.textContent = appState.lang === "zh" ? "🌐 ZH" : "🌐 EN";
+        elements.usageText.textContent = t("usage.text");
+        renderAll();
+      }
+
+      function setLanguage(lang) {
+        appState.lang = lang;
+        applyLanguage();
+      }
+
+      function getSelectedLayer() {
+        return appState.layers.find((layer) => layer.id === appState.selectedLayerId) || null;
+      }
+
+      function setSelectedLayer(layerId) {
+        appState.selectedLayerId = layerId;
+        renderAll();
+      }
+
+      function getContainPlacement(imageWidth, imageHeight, maxWidth, maxHeight) {
+        const scale = Math.min(maxWidth / imageWidth, maxHeight / imageHeight);
+        const width = imageWidth * scale;
+        const height = imageHeight * scale;
+        return {
+          left: (maxWidth - width) / 2,
+          top: (maxHeight - height) / 2,
+          width,
+          height,
+          originalWidth: imageWidth,
+          originalHeight: imageHeight
+        };
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+      }
+
+      function makeId() {
+        if (window.crypto && crypto.randomUUID) {
+          return crypto.randomUUID();
+        }
+        return "layer-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+      }
+
+      function removeActiveSelection() {
+        if (activeSelectionRect) {
+          fabricCanvas.remove(activeSelectionRect);
+          activeSelectionRect = null;
+          fabricCanvas.requestRenderAll();
+        }
+      }
+
+      function clearOverlayRects() {
+        layerOverlayMap.forEach((rect) => {
+          fabricCanvas.remove(rect);
+        });
+        layerOverlayMap.clear();
+      }
+
+      function refreshFabricOverlays() {
+        const activeIds = new Set(appState.layers.map((layer) => layer.id));
+        layerOverlayMap.forEach((rect, layerId) => {
+          if (!activeIds.has(layerId)) {
+            fabricCanvas.remove(rect);
+            layerOverlayMap.delete(layerId);
+          }
+        });
+
+        appState.layers.forEach((layer) => {
+          let rect = layerOverlayMap.get(layer.id);
+          if (!rect) {
+            rect = new fabric.Rect({
+              left: layer.left,
+              top: layer.top,
+              width: layer.width,
+              height: layer.height,
+              fill: "rgba(255,255,255,0.04)",
+              stroke: "#71717a",
+              strokeDashArray: [6, 5],
+              selectable: false,
+              evented: true,
+              rx: 12,
+              ry: 12
+            });
+            rect.on("mousedown", () => {
+              setSelectedLayer(layer.id);
+            });
+            layerOverlayMap.set(layer.id, rect);
+            fabricCanvas.add(rect);
+          }
+
+          rect.set({
+            left: layer.left,
+            top: layer.top,
+            width: layer.width,
+            height: layer.height,
+            visible: layer.visible,
+            evented: layer.visible,
+            fill: layer.id === appState.selectedLayerId ? "rgba(56,189,248,0.18)" : "rgba(255,255,255,0.04)",
+            stroke: layer.id === appState.selectedLayerId ? "#38bdf8" : "#71717a"
+          });
+          rect.setCoords();
+          rect.bringToFront();
+        });
+
+        if (activeSelectionRect) {
+          activeSelectionRect.bringToFront();
+        }
+        fabricCanvas.requestRenderAll();
+      }
+
+      function renderStaticText() {
+        elements.canvasStateText.textContent = appState.sourceImageUrl ? t("canvas.loaded") : t("canvas.empty");
+        elements.canvasHintText.textContent = appState.selectionMode ? t("canvas.modeOn") : t("canvas.modeOff");
+        elements.layerSummary.textContent = `${appState.layers.length} pseudo-3D layers`;
+        elements.propertyDescription.textContent = getSelectedLayer()?.name || t("panelsText.noSelection");
+        elements.emptyCanvasOverlay.classList.toggle("hidden", !!appState.sourceImageUrl);
+        elements.emptyPreviewOverlay.classList.toggle("hidden", !!appState.sourceImageUrl);
+      }
+
+      function renderPropertyPanel() {
+        const layer = getSelectedLayer();
+        if (!layer) {
+          elements.propertyPanel.innerHTML = `
+            <div class="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/60 p-4 text-sm leading-6 text-zinc-400">
+              ${escapeHtml(t("panelsText.noSelection"))}
+            </div>
+          `;
+          return;
+        }
+
+        elements.propertyPanel.innerHTML = `
+          <div class="space-y-6">
+            <div>
+              <div class="mb-3 flex items-center justify-between text-sm">
+                <span>${escapeHtml(t("properties.thickness"))}</span>
+                <span class="text-zinc-400">${layer.thickness}px</span>
+              </div>
+              <input class="range" id="thicknessRange" type="range" min="0" max="60" step="1" value="${layer.thickness}" />
+            </div>
+            <div>
+              <div class="mb-3 flex items-center justify-between text-sm">
+                <span>${escapeHtml(t("properties.bevel"))}</span>
+                <span class="text-zinc-400">${layer.bevel}</span>
+              </div>
+              <input class="range" id="bevelRange" type="range" min="0" max="20" step="1" value="${layer.bevel}" />
+            </div>
+            <div>
+              <div class="mb-3 flex items-center justify-between text-sm">
+                <span>${escapeHtml(t("properties.radius"))}</span>
+                <span class="text-zinc-400">${layer.radius}px</span>
+              </div>
+              <input class="range" id="radiusRange" type="range" min="0" max="50" step="1" value="${layer.radius}" />
+            </div>
+            <div>
+              <label class="mb-3 block text-sm">${escapeHtml(t("properties.material"))}</label>
+              <select
+                id="materialSelect"
+                class="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none"
+              >
+                <option value="matte" ${layer.material === "matte" ? "selected" : ""}>${escapeHtml(t("material.matte"))}</option>
+                <option value="glossy" ${layer.material === "glossy" ? "selected" : ""}>${escapeHtml(t("material.glossy"))}</option>
+                <option value="glass" ${layer.material === "glass" ? "selected" : ""}>${escapeHtml(t("material.glass"))}</option>
+                <option value="metal" ${layer.material === "metal" ? "selected" : ""}>${escapeHtml(t("material.metal"))}</option>
+              </select>
+            </div>
+          </div>
+        `;
+
+        const bindUpdate = (selector, key, parser = Number) => {
+          const input = elements.propertyPanel.querySelector(selector);
+          input.addEventListener("input", (event) => {
+            pushHistory();
+            const value = parser(event.target.value);
+            appState.layers = appState.layers.map((item) =>
+              item.id === layer.id ? { ...item, [key]: value } : item,
+            );
+            renderAll();
+          });
+        };
+
+        bindUpdate("#thicknessRange", "thickness");
+        bindUpdate("#bevelRange", "bevel");
+        bindUpdate("#radiusRange", "radius");
+        bindUpdate("#materialSelect", "material", (value) => value);
+      }
+
+      function renderLayerList() {
+        if (!appState.layers.length) {
+          elements.layerList.innerHTML = `
+            <div class="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/60 p-4 text-sm leading-6 text-zinc-400">
+              ${escapeHtml(t("panelsText.noLayers"))}
+            </div>
+          `;
+          return;
+        }
+
+        elements.layerList.innerHTML = appState.layers
+          .map((layer) => {
+            return `
+              <div class="${
+                layer.id === appState.selectedLayerId ? "border-sky-500 bg-sky-500/10" : "border-zinc-800 bg-zinc-950/60"
+              } rounded-2xl border p-4 transition" data-layer-id="${layer.id}">
+                <button type="button" class="mb-3 flex w-full items-center justify-between gap-3 text-left layer-select">
+                  <div>
+                    <div class="font-medium text-zinc-100">${escapeHtml(layer.name)}</div>
+                    <div class="mt-1 text-xs text-zinc-500">${escapeHtml(layer.visible ? t("layer.visible") : t("layer.hidden"))}</div>
+                  </div>
+                  <div class="text-xs text-zinc-400">${Math.round(layer.width)} x ${Math.round(layer.height)}</div>
+                </button>
+                <div class="flex flex-wrap gap-2">
+                  <button class="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-100 transition hover:bg-zinc-800 layer-toggle">
+                    ${escapeHtml(layer.visible ? t("layer.hide") : t("layer.show"))}
+                  </button>
+                  <button class="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-100 transition hover:bg-zinc-800 layer-up">
+                    ${escapeHtml(t("layer.moveUp"))}
+                  </button>
+                  <button class="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-100 transition hover:bg-zinc-800 layer-down">
+                    ${escapeHtml(t("layer.moveDown"))}
+                  </button>
+                  <button class="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs text-rose-200 transition hover:bg-rose-500/20 layer-delete">
+                    ${escapeHtml(t("layer.delete"))}
+                  </button>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+
+        elements.layerList.querySelectorAll("[data-layer-id]").forEach((node) => {
+          const layerId = node.dataset.layerId;
+          node.querySelector(".layer-select").addEventListener("click", () => setSelectedLayer(layerId));
+
+          node.querySelector(".layer-toggle").addEventListener("click", () => {
+            pushHistory();
+            appState.layers = appState.layers.map((layer) =>
+              layer.id === layerId ? { ...layer, visible: !layer.visible } : layer,
+            );
+            renderAll();
+          });
+
+          node.querySelector(".layer-delete").addEventListener("click", () => {
+            pushHistory();
+            appState.layers = appState.layers.filter((layer) => layer.id !== layerId);
+            if (appState.selectedLayerId === layerId) {
+              appState.selectedLayerId = appState.layers.at(-1)?.id || null;
+            }
+            renderAll();
+          });
+
+          node.querySelector(".layer-up").addEventListener("click", () => {
+            const index = appState.layers.findIndex((layer) => layer.id === layerId);
+            if (index > 0) {
+              pushHistory();
+              const next = [...appState.layers];
+              [next[index - 1], next[index]] = [next[index], next[index - 1]];
+              appState.layers = next;
+              renderAll();
+            }
+          });
+
+          node.querySelector(".layer-down").addEventListener("click", () => {
+            const index = appState.layers.findIndex((layer) => layer.id === layerId);
+            if (index >= 0 && index < appState.layers.length - 1) {
+              pushHistory();
+              const next = [...appState.layers];
+              [next[index], next[index + 1]] = [next[index + 1], next[index]];
+              appState.layers = next;
+              renderAll();
+            }
+          });
+        });
+      }
+
+      function getMaterialPreset(material) {
+        if (material === "matte") {
+          return {
+            color: 0x5b5b65,
+            specular: 0x111111,
+            shininess: 15,
+            opacity: 1,
+            transparent: false
+          };
+        }
+        if (material === "glass") {
+          return {
+            color: 0xbfe6ff,
+            specular: 0xffffff,
+            shininess: 95,
+            opacity: 0.62,
+            transparent: true
+          };
+        }
+        if (material === "metal") {
+          return {
+            color: 0xb0b7c3,
+            specular: 0xffffff,
+            shininess: 90,
+            opacity: 1,
+            transparent: false
+          };
+        }
+        return {
+          color: 0xe4e4e7,
+          specular: 0xffffff,
+          shininess: 65,
+          opacity: 1,
+          transparent: false
+        };
+      }
+
+      function createRoundedBoxGeometry(width, height, depth, radius, bevelStrength) {
+        const safeWidth = Math.max(width, 0.02);
+        const safeHeight = Math.max(height, 0.02);
+        const safeDepth = Math.max(depth, 0.02);
+        const maxRadius = Math.max(Math.min(safeWidth, safeHeight, safeDepth) * 0.45, 0);
+        const safeRadius = clamp(radius, 0, maxRadius);
+        const segments = Math.max(1, Math.round(2 + bevelStrength));
+
+        const geometry = new THREE.BoxGeometry(
+          safeWidth,
+          safeHeight,
+          safeDepth,
+          segments * 2,
+          segments * 2,
+          segments * 2,
+        );
+
+        if (safeRadius <= 0) {
+          return geometry;
+        }
+
+        const position = geometry.attributes.position;
+        const vertex = new THREE.Vector3();
+        const inner = new THREE.Vector3(
+          safeWidth / 2 - safeRadius,
+          safeHeight / 2 - safeRadius,
+          safeDepth / 2 - safeRadius,
+        );
+
+        for (let i = 0; i < position.count; i += 1) {
+          vertex.fromBufferAttribute(position, i);
+
+          const clamped = new THREE.Vector3(
+            clamp(vertex.x, -inner.x, inner.x),
+            clamp(vertex.y, -inner.y, inner.y),
+            clamp(vertex.z, -inner.z, inner.z),
+          );
+
+          const delta = vertex.clone().sub(clamped);
+          if (delta.lengthSq() > 0) {
+            delta.normalize().multiplyScalar(safeRadius);
+            vertex.copy(clamped.add(delta));
+          } else {
+            vertex.copy(clamped);
+          }
+
+          position.setXYZ(i, vertex.x, vertex.y, vertex.z);
+        }
+
+        geometry.computeVertexNormals();
+        return geometry;
+      }
+
+      function initThree() {
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(elements.threeContainer.clientWidth || 900, elements.threeContainer.clientHeight || 680);
+        renderer.shadowMap.enabled = true;
+        elements.threeContainer.appendChild(renderer.domElement);
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color("#09090b");
+
+        const camera = new THREE.PerspectiveCamera(40, (elements.threeContainer.clientWidth || 900) / 680, 0.1, 100);
+        camera.position.set(0, 0.4, 12);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.enablePan = false;
+
+        const ambient = new THREE.AmbientLight(0xffffff, 1.35);
+        const key = new THREE.DirectionalLight(0xffffff, 1.8);
+        key.position.set(5, 6, 8);
+        key.castShadow = true;
+        const fill = new THREE.PointLight(0x38bdf8, 50, 40);
+        fill.position.set(-5, 3, 5);
+
+        const floor = new THREE.Mesh(
+          new THREE.PlaneGeometry(40, 40),
+          new THREE.ShadowMaterial({ opacity: 0.18 }),
+        );
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -6;
+        floor.receiveShadow = true;
+
+        const rootGroup = new THREE.Group();
+
+        scene.add(ambient, key, fill, floor, rootGroup);
+
+        function animate() {
+          controls.update();
+          renderer.render(scene, camera);
+          requestAnimationFrame(animate);
+        }
+        animate();
+
+        window.addEventListener("resize", () => {
+          const width = elements.threeContainer.clientWidth || 900;
+          const height = elements.threeContainer.clientHeight || 680;
+          camera.aspect = width / height;
+          camera.updateProjectionMatrix();
+          renderer.setSize(width, height);
+        });
+
+        threeState.renderer = renderer;
+        threeState.scene = scene;
+        threeState.camera = camera;
+        threeState.controls = controls;
+        threeState.rootGroup = rootGroup;
+      }
+
+      function disposeGroup(group) {
+        while (group.children.length > 0) {
+          const child = group.children[0];
+          group.remove(child);
+          if (child.geometry) {
+            child.geometry.dispose();
+          }
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach((item) => item.dispose && item.dispose());
+            } else if (child.material.dispose) {
+              child.material.dispose();
+            }
+          }
+          if (child.children?.length) {
+            disposeGroup(child);
+          }
+        }
+      }
+
+      function buildPreviewScene() {
+        if (!threeState.rootGroup) {
+          return;
+        }
+
+        disposeGroup(threeState.rootGroup);
+
+        const deviceGeometry = createRoundedBoxGeometry(5.7, 10.4, 0.35, 0.22, 8);
+        const deviceMaterial = new THREE.MeshPhongMaterial({
+          color: 0x121318,
+          specular: 0x3b3f48,
+          shininess: 45
+        });
+        const deviceMesh = new THREE.Mesh(deviceGeometry, deviceMaterial);
+        deviceMesh.position.z = -0.2;
+        deviceMesh.castShadow = true;
+        deviceMesh.receiveShadow = true;
+        threeState.rootGroup.add(deviceMesh);
+
+        const textureLoader = new THREE.TextureLoader();
+
+        if (appState.sourceImageUrl) {
+          const baseTexture = textureLoader.load(appState.sourceImageUrl);
+          baseTexture.colorSpace = THREE.SRGBColorSpace;
+          const basePlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(PHONE_WIDTH, PHONE_HEIGHT),
+            new THREE.MeshBasicMaterial({ map: baseTexture, transparent: true }),
+          );
+          basePlane.position.z = 0.01;
+          threeState.rootGroup.add(basePlane);
+        }
+
+        appState.layers
+          .filter((layer) => layer.visible)
+          .forEach((layer) => {
+            const depth = Math.max(layer.thickness / 60, 0.06);
+            const bevel = layer.bevel;
+            const radius = Math.min(layer.radius / 60, Math.min(layer.width3d, layer.height3d, depth) * 0.45);
+            const preset = getMaterialPreset(layer.material);
+
+            const bodyMaterial = new THREE.MeshPhongMaterial({
+              color: preset.color,
+              specular: preset.specular,
+              shininess: preset.shininess + bevel * 2,
+              opacity: preset.opacity,
+              transparent: preset.transparent
+            });
+
+            const geometry = createRoundedBoxGeometry(
+              Math.max(layer.width3d, 0.08),
+              Math.max(layer.height3d, 0.08),
+              depth,
+              radius,
+              bevel,
+            );
+
+            const body = new THREE.Mesh(geometry, bodyMaterial);
+            body.position.set(layer.x, layer.y, depth / 2 + 0.05);
+            body.castShadow = true;
+            body.receiveShadow = true;
+            threeState.rootGroup.add(body);
+
+            const texture = textureLoader.load(layer.textureUrl);
+            texture.colorSpace = THREE.SRGBColorSpace;
+            const face = new THREE.Mesh(
+              new THREE.PlaneGeometry(layer.width3d * 0.97, layer.height3d * 0.97),
+              new THREE.MeshBasicMaterial({ map: texture, transparent: true }),
+            );
+            face.position.set(layer.x, layer.y, depth + 0.053);
+            threeState.rootGroup.add(face);
+          });
+      }
+
+      function renderAll() {
+        renderStaticText();
+        renderPropertyPanel();
+        renderLayerList();
+        refreshFabricOverlays();
+        buildPreviewScene();
+        setStatus(appState.status || t("status.ready"));
+      }
+
+      async function setImageFromDataUrl(dataUrl) {
+        const image = new Image();
+        await new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = reject;
+          image.src = dataUrl;
+        });
+
+        appState.sourceImageUrl = dataUrl;
+        appState.sourceImage = image;
+        appState.imagePlacement = getContainPlacement(image.width, image.height, CANVAS_WIDTH, CANVAS_HEIGHT);
+        appState.layers = [];
+        appState.selectedLayerId = null;
+        appState.history = [];
+        appState.future = [];
+        appState.status = t("status.imported");
+
+        if (backgroundFabricImage) {
+          fabricCanvas.remove(backgroundFabricImage);
+          backgroundFabricImage = null;
+        }
+        clearOverlayRects();
+        removeActiveSelection();
+
+        await new Promise((resolve) => {
+          fabric.Image.fromURL(
+            dataUrl,
+            (fabricImage) => {
+              fabricImage.set({
+                left: appState.imagePlacement.left,
+                top: appState.imagePlacement.top,
+                selectable: false,
+                evented: false,
+                scaleX: appState.imagePlacement.width / fabricImage.width,
+                scaleY: appState.imagePlacement.height / fabricImage.height
+              });
+              backgroundFabricImage = fabricImage;
+              fabricCanvas.add(fabricImage);
+              fabricImage.sendToBack();
+              fabricCanvas.requestRenderAll();
+              resolve();
+            },
+            { crossOrigin: "anonymous" },
+          );
+        });
+
+        renderAll();
+      }
+
+      async function importImageFile(file) {
+        if (!file || !file.type.startsWith("image/")) {
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = async () => {
+          if (typeof reader.result === "string") {
+            await setImageFromDataUrl(reader.result);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function pointerInsideImage(pointer) {
+        const placement = appState.imagePlacement;
+        if (!placement) {
+          return false;
+        }
+        return (
+          pointer.x >= placement.left &&
+          pointer.x <= placement.left + placement.width &&
+          pointer.y >= placement.top &&
+          pointer.y <= placement.top + placement.height
+        );
+      }
+
+      function addLayerFromSelection(selectionRect) {
+        if (!appState.sourceImage || !appState.imagePlacement) {
+          return;
+        }
+
+        const placement = appState.imagePlacement;
+        const sourceX = Math.round(((selectionRect.left - placement.left) / placement.width) * placement.originalWidth);
+        const sourceY = Math.round(((selectionRect.top - placement.top) / placement.height) * placement.originalHeight);
+        const sourceWidth = Math.max(1, Math.round((selectionRect.width / placement.width) * placement.originalWidth));
+        const sourceHeight = Math.max(1, Math.round((selectionRect.height / placement.height) * placement.originalHeight));
+
+        const cropCanvas = document.createElement("canvas");
+        cropCanvas.width = sourceWidth;
+        cropCanvas.height = sourceHeight;
+        const context = cropCanvas.getContext("2d");
+        if (!context) {
+          return;
+        }
+
+        context.drawImage(
+          appState.sourceImage,
+          sourceX,
+          sourceY,
+          sourceWidth,
+          sourceHeight,
+          0,
+          0,
+          sourceWidth,
+          sourceHeight,
+        );
+
+        const textureUrl = cropCanvas.toDataURL("image/png");
+        const centerX = selectionRect.left + selectionRect.width / 2;
+        const centerY = selectionRect.top + selectionRect.height / 2;
+        const relativeX = (centerX - placement.left) / placement.width;
+        const relativeY = (centerY - placement.top) / placement.height;
+
+        pushHistory();
+        const layer = {
+          id: makeId(),
+          name: `Layer ${appState.layers.length + 1}`,
+          textureUrl,
+          visible: true,
+          material: "glossy",
+          thickness: 18,
+          bevel: 6,
+          radius: 16,
+          left: selectionRect.left,
+          top: selectionRect.top,
+          width: selectionRect.width,
+          height: selectionRect.height,
+          width3d: (selectionRect.width / placement.width) * PHONE_WIDTH,
+          height3d: (selectionRect.height / placement.height) * PHONE_HEIGHT,
+          x: (relativeX - 0.5) * PHONE_WIDTH,
+          y: (0.5 - relativeY) * PHONE_HEIGHT
+        };
+
+        appState.layers.push(layer);
+        appState.selectedLayerId = layer.id;
+        setActiveView("3d");
+        renderAll();
+      }
+
+      fabricCanvas.on("mouse:down", (event) => {
+        if (!appState.sourceImage || !appState.imagePlacement) {
+          return;
+        }
+
+        const shouldSelect = appState.selectionMode || event.e.shiftKey;
+        if (!shouldSelect) {
+          return;
+        }
+
+        const pointer = fabricCanvas.getPointer(event.e);
+        if (!pointerInsideImage(pointer)) {
+          return;
+        }
+
+        removeActiveSelection();
+        dragStartPoint = pointer;
+        isSelecting = true;
+        activeSelectionRect = new fabric.Rect({
+          left: pointer.x,
+          top: pointer.y,
+          width: 0,
+          height: 0,
+          fill: "rgba(56,189,248,0.12)",
+          stroke: "#38bdf8",
+          strokeDashArray: [8, 6],
+          selectable: false,
+          evented: false,
+          rx: 12,
+          ry: 12
+        });
+        fabricCanvas.add(activeSelectionRect);
+        activeSelectionRect.bringToFront();
+      });
+
+      fabricCanvas.on("mouse:move", (event) => {
+        if (!isSelecting || !dragStartPoint || !activeSelectionRect || !appState.imagePlacement) {
+          return;
+        }
+        const pointer = fabricCanvas.getPointer(event.e);
+        const placement = appState.imagePlacement;
+        const left = clamp(Math.min(dragStartPoint.x, pointer.x), placement.left, placement.left + placement.width);
+        const top = clamp(Math.min(dragStartPoint.y, pointer.y), placement.top, placement.top + placement.height);
+        const right = clamp(Math.max(dragStartPoint.x, pointer.x), placement.left, placement.left + placement.width);
+        const bottom = clamp(Math.max(dragStartPoint.y, pointer.y), placement.top, placement.top + placement.height);
+        activeSelectionRect.set({
+          left,
+          top,
+          width: right - left,
+          height: bottom - top
+        });
+        activeSelectionRect.setCoords();
+        fabricCanvas.requestRenderAll();
+      });
+
+      fabricCanvas.on("mouse:up", () => {
+        if (!isSelecting || !activeSelectionRect) {
+          dragStartPoint = null;
+          isSelecting = false;
+          return;
+        }
+        const selection = {
+          left: Number(activeSelectionRect.left || 0),
+          top: Number(activeSelectionRect.top || 0),
+          width: Number(activeSelectionRect.width || 0),
+          height: Number(activeSelectionRect.height || 0)
+        };
+
+        dragStartPoint = null;
+        isSelecting = false;
+        removeActiveSelection();
+
+        if (selection.width < 8 || selection.height < 8) {
+          return;
+        }
+
+        addLayerFromSelection(selection);
+      });
+
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function downloadCurrentSnapshot() {
+        const source = appState.activeView === "3d"
+          ? threeState.renderer.domElement.toDataURL("image/png")
+          : document.getElementById("editorCanvas").toDataURL("image/png");
+        const link = document.createElement("a");
+        link.href = source;
+        link.download = "3d-ui-forge-snapshot.png";
+        link.click();
+        appState.status = t("status.snapshot");
+        renderAll();
+      }
+
+      function exportSingleHtml() {
+        if (!appState.sourceImageUrl && appState.layers.length === 0) {
+          alert(t("status.emptyExport"));
+          return;
+        }
+
+        alert(t("alert.exportIntro"));
+        const exportState = {
+          lang: appState.lang,
+          activeView: appState.activeView,
+          selectionMode: appState.selectionMode,
+          sourceImageUrl: appState.sourceImageUrl,
+          layers: cloneLayers(appState.layers),
+          selectedLayerId: appState.selectedLayerId
+        };
+
+        const html = document.documentElement.outerHTML.replace(
+          '<script type="module">',
+          `<script>window.__FORGE_STATE__=${JSON.stringify(exportState).replace(/</g, "\\u003c")};</script>\n    <script type="module">`,
+        );
+
+        downloadBlob(new Blob(["<!doctype html>\n" + html], { type: "text/html;charset=utf-8" }), "3d-ui-forge.html");
+        appState.status = t("status.exported");
+        renderAll();
+      }
+
+      function restoreFromImportState(importState) {
+        if (!importState) {
+          return;
+        }
+        appState.lang = importState.lang || "zh";
+        appState.activeView = importState.activeView || "2d";
+        appState.selectionMode = Boolean(importState.selectionMode);
+        appState.selectedLayerId = importState.selectedLayerId || null;
+        applyLanguage();
+        setSelectionMode(appState.selectionMode);
+        setActiveView(appState.activeView);
+
+        if (importState.sourceImageUrl) {
+          appState.skipHistory = true;
+          setImageFromDataUrl(importState.sourceImageUrl).then(() => {
+            appState.layers = Array.isArray(importState.layers) ? importState.layers : [];
+            appState.selectedLayerId = importState.selectedLayerId || appState.layers.at(-1)?.id || null;
+            appState.skipHistory = false;
+            renderAll();
+          });
+        }
+      }
+
+      function undo() {
+        if (!appState.history.length) {
+          return;
+        }
+        appState.future.unshift(createSnapshot());
+        const previous = appState.history.pop();
+        appState.layers = cloneLayers(previous.layers);
+        appState.selectedLayerId = previous.selectedLayerId;
+        renderAll();
+      }
+
+      function redo() {
+        if (!appState.future.length) {
+          return;
+        }
+        appState.history.push(createSnapshot());
+        const next = appState.future.shift();
+        appState.layers = cloneLayers(next.layers);
+        appState.selectedLayerId = next.selectedLayerId;
+        renderAll();
+      }
+
+      elements.importBtn.addEventListener("click", () => elements.fileInput.click());
+      elements.fileInput.addEventListener("change", (event) => {
+        void importImageFile(event.target.files?.[0] || null);
+      });
+
+      elements.aiBtn.addEventListener("click", () => {
+        alert(t("alert.ai"));
+      });
+
+      elements.manualBtn.addEventListener("click", () => {
+        setSelectionMode(!appState.selectionMode);
+      });
+
+      elements.view2dBtn.addEventListener("click", () => setActiveView("2d"));
+      elements.view3dBtn.addEventListener("click", () => setActiveView("3d"));
+      elements.tab2dBtn.addEventListener("click", () => setActiveView("2d"));
+      elements.tab3dBtn.addEventListener("click", () => setActiveView("3d"));
+      elements.exportBtn.addEventListener("click", exportSingleHtml);
+      elements.floatingExportBtn.addEventListener("click", exportSingleHtml);
+      elements.snapshotBtn.addEventListener("click", downloadCurrentSnapshot);
+
+      elements.langBtn.addEventListener("click", () => {
+        setLanguage(appState.lang === "zh" ? "en" : "zh");
+      });
+
+      document.addEventListener("keydown", (event) => {
+        const isMac = navigator.platform.toUpperCase().includes("MAC");
+        const metaPressed = isMac ? event.metaKey : event.ctrlKey;
+        if (metaPressed && event.key.toLowerCase() === "z" && !event.shiftKey) {
+          event.preventDefault();
+          undo();
+        }
+        if ((metaPressed && event.key.toLowerCase() === "y") || (metaPressed && event.shiftKey && event.key.toLowerCase() === "z")) {
+          event.preventDefault();
+          redo();
+        }
+      });
+
+      ["dragenter", "dragover"].forEach((eventName) => {
+        elements.dropZone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          elements.dropOverlay.classList.remove("hidden");
+          elements.dropOverlay.classList.add("flex");
+          elements.dropOverlayText.textContent = t("canvas.dropActive");
+        });
+      });
+
+      ["dragleave", "drop"].forEach((eventName) => {
+        elements.dropZone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          elements.dropOverlay.classList.add("hidden");
+          elements.dropOverlay.classList.remove("flex");
+          if (eventName === "drop") {
+            void importImageFile(event.dataTransfer?.files?.[0] || null);
+          }
+        });
+      });
+
+      initThree();
+      applyLanguage();
+      setSelectionMode(false);
+      setActiveView("2d");
+      setStatus(t("status.ready"));
+      renderAll();
+
+      if (window.__FORGE_STATE__) {
+        restoreFromImportState(window.__FORGE_STATE__);
+      }
+    </script>
+  </body>
+</html>
