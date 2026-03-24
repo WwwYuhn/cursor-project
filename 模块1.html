@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UI升维原型工坊 | UI Lift Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg: #1f1f1f;
+      --panel: rgba(45, 45, 45, 0.88);
+      --panel-solid: #2d2d2d;
+      --border: #444444;
+      --border-soft: rgba(255, 255, 255, 0.08);
+      --text-primary: #f3f4f6;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --accent: #4f8cff;
+      --accent-hover: #6aa0ff;
+      --button-hover: #3a3a3a;
+      --button-active: #454545;
+      --shadow: 0 14px 40px rgba(0, 0, 0, 0.34);
+      --radius: 12px;
+      --radius-sm: 10px;
+      --header-height: 56px;
+      --font-ui: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+    }
+
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(79, 140, 255, 0.08), transparent 28%),
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.04), transparent 18%),
+        #1f1f1f;
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+      background: none;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      min-height: 100vh;
+      background: transparent;
+    }
+
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 0 18px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border-soft);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 240px;
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(79, 140, 255, 0.24), rgba(79, 140, 255, 0.1));
+      border: 1px solid rgba(79, 140, 255, 0.3);
+      color: #dbeafe;
+      flex: 0 0 auto;
+    }
+
+    .brand-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+      line-height: 1.1;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: var(--text-primary);
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-secondary);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .toolbar-center {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .lang-switch {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-soft);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .lang-option {
+      min-width: 68px;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+
+    .lang-option:hover {
+      color: var(--text-primary);
+    }
+
+    .lang-option.active {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .tool-button,
+    .preview-button {
+      height: 38px;
+      padding: 0 14px;
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--panel-solid);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      transition:
+        background-color 160ms ease,
+        border-color 160ms ease,
+        transform 160ms ease,
+        box-shadow 160ms ease;
+      white-space: nowrap;
+    }
+
+    .tool-button:hover,
+    .preview-button:hover {
+      background: var(--button-hover);
+      border-color: #565656;
+    }
+
+    .tool-button:active,
+    .preview-button:active {
+      transform: translateY(1px);
+      background: var(--button-active);
+    }
+
+    .tool-button svg,
+    .preview-button svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex: 0 0 auto;
+    }
+
+    .toolbar-right {
+      min-width: 220px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .preview-button {
+      padding: 0 18px;
+      background: linear-gradient(180deg, rgba(79, 140, 255, 0.22), rgba(79, 140, 255, 0.12));
+      border-color: rgba(79, 140, 255, 0.45);
+      box-shadow: 0 8px 24px rgba(24, 87, 198, 0.22);
+    }
+
+    .preview-button:hover {
+      background: linear-gradient(180deg, rgba(106, 160, 255, 0.24), rgba(79, 140, 255, 0.16));
+      border-color: rgba(106, 160, 255, 0.6);
+    }
+
+    .workspace-shell {
+      min-height: 100vh;
+      padding-top: calc(var(--header-height) + 24px);
+    }
+
+    .workspace-placeholder {
+      margin: 0 24px 24px;
+      min-height: calc(100vh - var(--header-height) - 48px);
+      border-radius: 18px;
+      border: 1px dashed rgba(255, 255, 255, 0.06);
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0.01)),
+        rgba(255, 255, 255, 0.01);
+    }
+
+    @media (max-width: 1180px) {
+      .topbar {
+        height: auto;
+        min-height: var(--header-height);
+        flex-wrap: wrap;
+        padding-top: 12px;
+        padding-bottom: 12px;
+      }
+
+      .brand,
+      .toolbar-right {
+        min-width: auto;
+      }
+
+      .toolbar-center {
+        order: 3;
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .workspace-shell {
+        padding-top: 120px;
+      }
+    }
+
+    @media (max-width: 780px) {
+      .toolbar-center {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .toolbar-group,
+      .lang-switch,
+      .toolbar-right {
+        justify-content: center;
+      }
+
+      .preview-button {
+        width: 100%;
+      }
+
+      .workspace-shell {
+        padding-top: 180px;
+      }
+    }
+  </style>
+</head>
+<body class="bg-zinc-950">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path d="M5 7.5 12 4l7 3.5-7 3.5-7-3.5Z" fill="none" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M5 12.5 12 16l7-3.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M5 17.5 12 21l7-3.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+          </svg>
+        </div>
+        <div class="brand-copy">
+          <div class="brand-title" data-i18n="titleZh">UI升维原型工坊</div>
+          <div class="brand-subtitle" data-i18n="titleEn">UI Lift Studio</div>
+        </div>
+      </div>
+
+      <div class="toolbar-center">
+        <div class="lang-switch" aria-label="Language Switcher">
+          <button class="lang-option active" type="button" data-lang="en">EN</button>
+          <button class="lang-option" type="button" data-lang="zh">中文</button>
+        </div>
+
+        <div class="toolbar-group">
+          <button class="tool-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v12"></path>
+              <path d="m7 8 5-5 5 5"></path>
+              <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"></path>
+            </svg>
+            <span data-i18n="importOneClick">一键导入</span>
+          </button>
+
+          <button class="tool-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m5 5 10 0"></path>
+              <path d="m5 5 0 10"></path>
+              <path d="m19 19-10 0"></path>
+              <path d="m19 19 0-10"></path>
+              <path d="M9 9h6v6H9z"></path>
+            </svg>
+            <span data-i18n="manualSelect">手动框选工具</span>
+          </button>
+
+          <button class="tool-button" type="button" aria-label="Undo">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 7 4 12l5 5"></path>
+              <path d="M20 12H4"></path>
+            </svg>
+            <span data-i18n="undo">撤销</span>
+          </button>
+
+          <button class="tool-button" type="button" aria-label="Redo">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m15 7 5 5-5 5"></path>
+              <path d="M4 12h16"></path>
+            </svg>
+            <span data-i18n="redo">重做</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar-right">
+        <button class="preview-button" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 7.5 12 3l9 4.5-9 4.5-9-4.5Z"></path>
+            <path d="M3 16.5 12 21l9-4.5"></path>
+            <path d="M12 12v9"></path>
+          </svg>
+          <span data-i18n="previewToggle">2D / 3D 预览切换</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="workspace-shell">
+      <section class="workspace-placeholder" aria-hidden="true"></section>
+    </main>
+  </div>
+
+  <script>
+    const translations = {
+      zh: {
+        pageTitle: "UI升维原型工坊 | UI Lift Studio",
+        titleZh: "UI升维原型工坊",
+        titleEn: "UI Lift Studio",
+        importOneClick: "一键导入",
+        manualSelect: "手动框选工具",
+        undo: "撤销",
+        redo: "重做",
+        previewToggle: "2D / 3D 预览切换"
+      },
+      en: {
+        pageTitle: "UI Lift Studio | UI升级 Prototype Workshop",
+        titleZh: "UI升级 Prototype Workshop",
+        titleEn: "UI Lift Studio",
+        importOneClick: "Quick Import",
+        manualSelect: "Manual Selection",
+        undo: "Undo",
+        redo: "Redo",
+        previewToggle: "2D / 3D Preview"
+      }
+    };
+
+    let currentLanguage = "zh";
+
+    function applyTranslations(lang) {
+      const dictionary = translations[lang];
+      document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+      document.title = dictionary.pageTitle;
+
+      document.querySelectorAll("[data-i18n]").forEach((node) => {
+        const key = node.dataset.i18n;
+        if (dictionary[key]) {
+          node.textContent = dictionary[key];
+        }
+      });
+
+      document.querySelectorAll(".lang-option").forEach((button) => {
+        button.classList.toggle("active", button.dataset.lang === lang);
+      });
+    }
+
+    document.querySelectorAll(".lang-option").forEach((button) => {
+      button.addEventListener("click", () => {
+        currentLanguage = button.dataset.lang;
+        applyTranslations(currentLanguage);
+      });
+    });
+
+    applyTranslations(currentLanguage);
+  </script>
+</body>
+</html>
