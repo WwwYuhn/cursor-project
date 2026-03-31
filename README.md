@@ -132,11 +132,9 @@ If any external service is added later, do not commit API keys into the reposito
 
 ## Presentation Links
 
-Add the final links before submission (placeholders for now):
-
 - **Product brief page (HTML, in repo):** [`public/presentation.html`](public/presentation.html) — see [Product brief (HTML)](#product-brief-html) above
-- YouTube presentation: `（待补充 / To be added）`
-- GitHub Pages (presentation site): `（待补充 / To be added）` — can point to the deployed site; the brief itself is at `/presentation.html` when `out/` is served as site root
+- **YouTube presentation:** [https://youtu.be/oH-4LvWrNks](https://youtu.be/oH-4LvWrNks)
+- **GitHub Pages** (if used): `（待补充 / To be added）` — optional; the brief is at `/presentation.html` when `out/` is served as site root
 
 ## Group Members
 
@@ -147,8 +145,8 @@ Add the final links before submission (placeholders for now):
 
 ## Repository
 
-- Final repo: `（待补充：推送到 GitHub 后粘贴仓库地址 / Paste repo URL after push）`
-- Main branch: `main`
+- **Final repo:** [https://github.com/WwwYuhn/cursor-project](https://github.com/WwwYuhn/cursor-project)
+- **Main branch:** `main`
 
 ## Submission Checklist
 
@@ -156,9 +154,9 @@ Add the final links before submission (placeholders for now):
 - [x] Bilingual switch included
 - [x] Final version prepared for `main` branch
 - [x] README member information completed
-- [ ] YouTube presentation link added
+- [x] YouTube presentation link added
 - [ ] Github Pages presentation link added
-- [ ] Final repository link confirmed
+- [x] Final repository link confirmed
 
 ## Notes
 
