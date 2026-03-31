@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Apple 3D UI Previewer — Product brief</title>
+    <meta
+      name="description"
+      content="Preview UI mockups in 3D in the browser and export PNGs from any angle. Built for visual communication and presentation workflows."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-deep: #0f0f0f;
+        --bg-page: #141414;
+        --bg-raised: #1b1b1b;
+        --bg-code: #0d1117;
+        --border: rgba(255, 255, 255, 0.08);
+        --border-strong: rgba(255, 255, 255, 0.12);
+        --text: #f9f9fb;
+        --text-secondary: #b3b3b8;
+        --text-tertiary: #8a8a91;
+        --link: #8cb4ff;
+        --link-hover: #b6d4ff;
+        --accent-line: #3d7e9a;
+        --note-border: #0069c2;
+        --note-bg: rgba(0, 105, 194, 0.08);
+        --header-h: 3.5rem;
+        --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+        --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      @keyframes ambient-drift {
+        0%,
+        100% {
+          transform: translate(0, 0) scale(1);
+          opacity: 0.55;
+        }
+        33% {
+          transform: translate(2%, -3%) scale(1.05);
+          opacity: 0.7;
+        }
+        66% {
+          transform: translate(-3%, 2%) scale(0.98);
+          opacity: 0.5;
+        }
+      }
+
+      @keyframes ambient-drift-slow {
+        0%,
+        100% {
+          transform: translate(0, 0) rotate(0deg);
+        }
+        50% {
+          transform: translate(-4%, 3%) rotate(2deg);
+        }
+      }
+
+      @keyframes grid-pan {
+        0% {
+          background-position: 0 0;
+        }
+        100% {
+          background-position: 48px 48px;
+        }
+      }
+
+      @keyframes title-shimmer {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+
+      @keyframes notecard-glow {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(0, 105, 194, 0);
+        }
+        50% {
+          box-shadow: 0 0 28px -8px rgba(0, 105, 194, 0.15);
+        }
+      }
+
+      @keyframes icon-float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-6px);
+        }
+      }
+
+      @keyframes code-shine {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(200%);
+        }
+      }
+
+      @keyframes meta-blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.35;
+        }
+      }
+
+      @keyframes beam-sweep {
+        0% {
+          transform: translateX(-100%) skewX(-12deg);
+          opacity: 0;
+        }
+        15% {
+          opacity: 0.55;
+        }
+        55% {
+          opacity: 0.35;
+        }
+        100% {
+          transform: translateX(220%) skewX(-12deg);
+          opacity: 0;
+        }
+      }
+
+      @keyframes lang-flash {
+        0% {
+          opacity: 0;
+        }
+        35% {
+          opacity: 0.12;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+
+      @keyframes content-snap {
+        0% {
+          transform: scale(0.998);
+          filter: brightness(1.08);
+        }
+        100% {
+          transform: scale(1);
+          filter: brightness(1);
+        }
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        .ambient,
+        .ambient::after,
+        .hero-aurora,
+        .hero-aurora::before,
+        .notecard,
+        .icon-wrap img,
+        .header-meta::after,
+        .codeblock-wrap::after {
+          animation: none !important;
+        }
+
+        .reveal {
+          opacity: 1 !important;
+          transform: none !important;
+          filter: none !important;
+          transition: none !important;
+        }
+
+        .spec-card:hover {
+          transform: none !important;
+        }
+
+        .hero-beam,
+        #top.i18n-snap,
+        .i18n-flash-layer {
+          animation: none !important;
+        }
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--text-secondary);
+        background: var(--bg-deep);
+        -webkit-font-smoothing: antialiased;
+        position: relative;
+      }
+
+      /* 极轻扫描线 + 切语言时闪光层 */
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 9997;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(255, 255, 255, 0.012) 2px,
+          rgba(255, 255, 255, 0.012) 3px
+        );
+        opacity: 0.85;
+      }
+
+      .i18n-flash-layer {
+        position: fixed;
+        inset: 0;
+        z-index: 9998;
+        pointer-events: none;
+        background: radial-gradient(circle at 50% 40%, rgba(140, 180, 255, 0.25), transparent 55%);
+        opacity: 0;
+        animation: none;
+      }
+
+      .i18n-flash-layer.is-on {
+        animation: lang-flash 0.55s var(--ease-out-expo) forwards;
+      }
+
+      #top.i18n-snap {
+        animation: content-snap 0.45s var(--ease-out-expo) forwards;
+      }
+
+      /* 全局环境层：慢速漂移光斑 + 移动网格 */
+      .ambient {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      .ambient::before {
+        content: "";
+        position: absolute;
+        width: 140%;
+        height: 140%;
+        left: -20%;
+        top: -20%;
+        background:
+          radial-gradient(ellipse 45% 35% at 20% 30%, rgba(140, 180, 255, 0.14), transparent 55%),
+          radial-gradient(ellipse 40% 40% at 85% 20%, rgba(61, 126, 154, 0.1), transparent 50%),
+          radial-gradient(ellipse 35% 45% at 70% 85%, rgba(140, 180, 255, 0.08), transparent 55%);
+        animation: ambient-drift 22s var(--ease-out-expo) infinite;
+      }
+
+      .ambient::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        opacity: 0.35;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+        background-size: 48px 48px;
+        animation: grid-pan 48s linear infinite;
+        mask-image: radial-gradient(ellipse 70% 65% at 50% 40%, black 10%, transparent 72%);
+      }
+
+      #top {
+        position: relative;
+        z-index: 1;
+      }
+
+      /* 滚动入场 */
+      .reveal {
+        opacity: 0;
+        transform: translateY(1.25rem);
+        filter: blur(4px);
+        transition:
+          opacity 0.85s var(--reveal-delay, 0ms) var(--ease-out-expo),
+          transform 0.85s var(--reveal-delay, 0ms) var(--ease-out-expo),
+          filter 0.65s var(--reveal-delay, 0ms) var(--ease-out-expo);
+      }
+
+      .reveal.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+      }
+
+      /* 渐变标题不宜与 blur 同用，避免 WebKit 裁切异常 */
+      .hero h1.reveal {
+        filter: none;
+      }
+
+      /* 技术标签：随章节显现后阶梯入场 */
+      .badge-row .badge {
+        opacity: 0;
+        transform: translateY(0.45rem);
+        transition:
+          opacity 0.5s var(--ease-out-expo),
+          transform 0.5s var(--ease-out-expo),
+          border-color 0.25s ease,
+          color 0.25s ease,
+          box-shadow 0.3s ease;
+      }
+
+      .doc-section.is-visible .badge-row .badge {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .doc-section.is-visible .badge-row .badge:nth-child(1) {
+        transition-delay: 0.04s;
+      }
+      .doc-section.is-visible .badge-row .badge:nth-child(2) {
+        transition-delay: 0.09s;
+      }
+      .doc-section.is-visible .badge-row .badge:nth-child(3) {
+        transition-delay: 0.14s;
+      }
+      .doc-section.is-visible .badge-row .badge:nth-child(4) {
+        transition-delay: 0.19s;
+      }
+      .doc-section.is-visible .badge-row .badge:nth-child(5) {
+        transition-delay: 0.24s;
+      }
+      .doc-section.is-visible .badge-row .badge:nth-child(6) {
+        transition-delay: 0.29s;
+      }
+      .doc-section.is-visible .badge-row .badge:nth-child(7) {
+        transition-delay: 0.34s;
+      }
+      .doc-section.is-visible .badge-row .badge:nth-child(8) {
+        transition-delay: 0.39s;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .badge-row .badge {
+          opacity: 1;
+          transform: none;
+          transition: none;
+        }
+      }
+
+      .skip {
+        position: absolute;
+        left: -9999px;
+        top: 0.5rem;
+        z-index: 100;
+        padding: 0.5rem 1rem;
+        background: var(--bg-raised);
+        color: var(--link);
+        font-weight: 600;
+        border-radius: 4px;
+      }
+
+      .skip:focus {
+        left: 0.5rem;
+      }
+
+      /* —— Top bar (doc-site chrome) —— */
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        height: var(--header-h);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0 clamp(1rem, 3vw, 1.5rem);
+        background: rgba(15, 15, 15, 0.78);
+        border-bottom: 1px solid var(--border);
+        backdrop-filter: blur(14px) saturate(1.2);
+        -webkit-backdrop-filter: blur(14px) saturate(1.2);
+        transition:
+          background 0.45s var(--ease-out-expo),
+          border-color 0.45s var(--ease-out-expo),
+          box-shadow 0.45s var(--ease-out-expo);
+      }
+
+      .site-header.is-scrolled {
+        background: rgba(12, 12, 12, 0.94);
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      }
+
+      .brand {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        text-decoration: none;
+        color: var(--text);
+        font-weight: 700;
+        font-size: 0.9375rem;
+        letter-spacing: -0.02em;
+        white-space: nowrap;
+      }
+
+      .brand span.muted {
+        font-weight: 500;
+        color: var(--text-tertiary);
+        font-size: 0.8125rem;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+      }
+
+      /* 语言切换：扁平分段，无装饰动效 */
+      .lang-switch {
+        display: inline-flex;
+        gap: 0;
+        padding: 2px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--border);
+      }
+
+      .lang-switch button {
+        flex: 1;
+        min-width: 2.75rem;
+        padding: 0.35rem 0.6rem;
+        border: none;
+        border-radius: 4px;
+        font-family: var(--font-mono);
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--text-tertiary);
+        background: transparent;
+        cursor: pointer;
+        transition:
+          color 0.15s ease,
+          background 0.15s ease;
+      }
+
+      .lang-switch button:hover {
+        color: var(--text-secondary);
+      }
+
+      .lang-switch button.is-active {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .lang-switch button:focus-visible {
+        outline: 2px solid var(--link);
+        outline-offset: 2px;
+      }
+
+      .header-meta {
+        font-family: var(--font-mono);
+        font-size: 0.6875rem;
+        color: var(--text-tertiary);
+        letter-spacing: 0.04em;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .header-meta::after {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--link);
+        box-shadow: 0 0 10px rgba(140, 180, 255, 0.6);
+        animation: meta-blink 2.8s ease-in-out infinite;
+      }
+
+      /* —— Hero —— */
+      .hero {
+        position: relative;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-page);
+        overflow: hidden;
+      }
+
+      .hero-aurora {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .hero-aurora::before {
+        content: "";
+        position: absolute;
+        inset: -30% -20%;
+        background:
+          radial-gradient(ellipse 90% 70% at 50% -20%, rgba(140, 180, 255, 0.18), transparent 52%),
+          radial-gradient(ellipse 60% 50% at 100% 50%, rgba(140, 180, 255, 0.06), transparent 45%);
+        animation: ambient-drift-slow 28s ease-in-out infinite alternate;
+      }
+
+      .hero-inner {
+        position: relative;
+        z-index: 1;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: clamp(2rem, 5vw, 3.25rem) clamp(1rem, 3vw, 1.5rem) clamp(2rem, 4vw, 2.75rem);
+      }
+
+      .hero-beam {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 45%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(140, 180, 255, 0.85), transparent);
+        filter: blur(0.5px);
+        animation: beam-sweep 6.5s var(--ease-out-expo) infinite;
+        pointer-events: none;
+        z-index: 2;
+        opacity: 0.9;
+      }
+
+      .breadcrumb {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: var(--text-tertiary);
+        margin: 0 0 1.25rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        align-items: center;
+      }
+
+      .breadcrumb a {
+        color: var(--link);
+        text-decoration: none;
+        border: none;
+      }
+
+      .breadcrumb a:hover {
+        text-decoration: underline;
+        color: var(--link-hover);
+      }
+
+      .breadcrumb span.sep {
+        opacity: 0.45;
+        user-select: none;
+      }
+
+      .hero h1 {
+        margin: 0 0 0.75rem;
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        line-height: 1.15;
+        max-width: 22ch;
+        background: linear-gradient(
+          105deg,
+          #ffffff 0%,
+          #e4e4e7 35%,
+          #a1a1aa 50%,
+          #f4f4f5 65%,
+          #ffffff 100%
+        );
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: title-shimmer 10s ease-in-out infinite;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .hero h1 {
+          color: var(--text);
+          background: none;
+          -webkit-background-clip: unset;
+          background-clip: unset;
+          animation: none;
+        }
+      }
+
+      .hero-tagline {
+        margin: 0;
+        font-size: clamp(1rem, 2vw, 1.125rem);
+        color: var(--text-secondary);
+        max-width: 52ch;
+        line-height: 1.65;
+      }
+
+      .hero-tagline strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      .hero-panels {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        margin-top: 1.75rem;
+      }
+
+      @media (min-width: 640px) {
+        .hero-panels {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      .spec-card {
+        background: var(--bg-raised);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem 1.1rem;
+        transition:
+          transform 0.45s var(--ease-out-expo),
+          border-color 0.35s ease,
+          box-shadow 0.45s var(--ease-out-expo),
+          background 0.35s ease;
+      }
+
+      .spec-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(140, 180, 255, 0.22);
+        box-shadow:
+          0 20px 48px rgba(0, 0, 0, 0.35),
+          0 0 0 1px rgba(140, 180, 255, 0.08);
+        background: rgba(27, 27, 30, 0.95);
+      }
+
+      .spec-card dt {
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        margin: 0 0 0.35rem;
+      }
+
+      .spec-card dd {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+      }
+
+      /* —— Doc shell: sidebar + article —— */
+      .doc-shell {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0;
+        padding: 0 clamp(1rem, 3vw, 1.5rem) 4rem;
+      }
+
+      @media (min-width: 900px) {
+        .doc-shell {
+          grid-template-columns: 220px minmax(0, 1fr);
+          gap: 2.5rem;
+          align-items: start;
+        }
+      }
+
+      .toc {
+        display: none;
+        position: sticky;
+        top: calc(var(--header-h) + 1.25rem);
+        padding: 1.25rem 0 2rem;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 1.5rem;
+      }
+
+      @media (min-width: 900px) {
+        .toc {
+          display: block;
+          border-bottom: none;
+          margin-bottom: 0;
+        }
+      }
+
+      .toc-title {
+        font-family: var(--font-mono);
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        margin: 0 0 0.75rem;
+      }
+
+      .toc ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        border-left: 2px solid var(--border-strong);
+      }
+
+      .toc li {
+        margin: 0;
+      }
+
+      .toc a {
+        display: block;
+        padding: 0.35rem 0 0.35rem 0.85rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border: none;
+        border-left: 2px solid transparent;
+        margin-left: -2px;
+        transition:
+          color 0.25s ease,
+          border-color 0.35s var(--ease-out-expo),
+          padding-left 0.35s var(--ease-out-expo),
+          background 0.25s ease;
+      }
+
+      .toc a:hover {
+        color: var(--link);
+        padding-left: 1rem;
+        background: rgba(140, 180, 255, 0.04);
+      }
+
+      .toc a.is-active {
+        color: var(--text);
+        border-left-color: var(--link);
+        padding-left: 1rem;
+        background: rgba(140, 180, 255, 0.06);
+      }
+
+      .toc a:focus-visible {
+        outline: 2px solid var(--link);
+        outline-offset: 2px;
+      }
+
+      article.doc {
+        padding: 1.75rem 0 0;
+        min-width: 0;
+      }
+
+      @media (min-width: 900px) {
+        article.doc {
+          padding-top: 2.25rem;
+          border-left: 1px solid var(--border);
+          padding-left: 2.5rem;
+          margin-left: -1px;
+        }
+      }
+
+      article.doc section {
+        margin-bottom: 2.75rem;
+        scroll-margin-top: calc(var(--header-h) + 0.75rem);
+      }
+
+      article.doc h2 {
+        margin: 0 0 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--text);
+        position: relative;
+      }
+
+      article.doc h2::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: -1px;
+        height: 1px;
+        width: 0;
+        background: linear-gradient(90deg, var(--link), transparent);
+        transition: width 0.7s var(--ease-out-expo);
+      }
+
+      article.doc section.is-visible h2::after {
+        width: min(120px, 40%);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        article.doc h2::after {
+          width: min(120px, 40%);
+          transition: none;
+        }
+      }
+
+      article.doc h2 code {
+        font-family: var(--font-mono);
+        font-size: 0.9em;
+        font-weight: 600;
+        color: var(--link);
+        background: rgba(140, 180, 255, 0.08);
+        padding: 0.1em 0.35em;
+        border-radius: 4px;
+      }
+
+      article.doc p {
+        margin: 0 0 1rem;
+        max-width: 68ch;
+      }
+
+      article.doc ul {
+        margin: 0 0 1rem;
+        padding-left: 1.25rem;
+        max-width: 68ch;
+      }
+
+      article.doc li {
+        margin-bottom: 0.5rem;
+      }
+
+      article.doc li::marker {
+        color: var(--accent-line);
+      }
+
+      article.doc strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      /* MDN-style note / callout */
+      .notecard {
+        margin: 1.25rem 0;
+        padding: 1rem 1rem 1rem 1.1rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--note-border);
+        background: var(--note-bg);
+        max-width: 68ch;
+        transition:
+          border-color 0.35s ease,
+          transform 0.45s var(--ease-out-expo);
+        animation: notecard-glow 5s ease-in-out infinite;
+      }
+
+      .notecard:hover {
+        transform: scale(1.01);
+        border-color: rgba(140, 180, 255, 0.2);
+      }
+
+      .notecard-title {
+        font-family: var(--font-mono);
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--link);
+        margin: 0 0 0.5rem;
+      }
+
+      .notecard p {
+        margin: 0;
+        font-size: 0.9375rem;
+      }
+
+      .notecard p + p {
+        margin-top: 0.65rem;
+      }
+
+      .codeblock-wrap {
+        position: relative;
+        margin: 1.25rem 0;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        max-width: 100%;
+      }
+
+      .codeblock-wrap::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 35%;
+        height: 100%;
+        background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .codeblock-wrap:hover::after {
+        opacity: 1;
+        animation: code-shine 1.2s var(--ease-out-expo) forwards;
+      }
+
+      /* Code block */
+      pre.codeblock {
+        margin: 0;
+        padding: 1rem 1.15rem;
+        background: var(--bg-code);
+        overflow-x: auto;
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
+        line-height: 1.65;
+        color: #c9d1d9;
+        max-width: 100%;
+      }
+
+      pre.codeblock .c {
+        color: #8b949e;
+      }
+
+      pre.codeblock .k {
+        color: #79c0ff;
+      }
+
+      pre.codeblock .s {
+        color: #a5d6ff;
+      }
+
+      /* Definition table (API-ish) */
+      .props-table {
+        width: 100%;
+        max-width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+        margin: 1rem 0 0;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      .props-table th,
+      .props-table td {
+        text-align: left;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+
+      .props-table tr:last-child th,
+      .props-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .props-table thead th {
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        background: var(--bg-raised);
+      }
+
+      .props-table tbody th {
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--text);
+        width: 32%;
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .props-table tbody td {
+        color: var(--text-secondary);
+      }
+
+      .props-table tbody tr {
+        transition: background 0.25s ease;
+      }
+
+      .props-table tbody tr:hover td,
+      .props-table tbody tr:hover th {
+        background: rgba(140, 180, 255, 0.06);
+      }
+
+      .inline-code {
+        font-family: var(--font-mono);
+        font-size: 0.84em;
+        color: var(--link-hover);
+        background: rgba(140, 180, 255, 0.1);
+        padding: 0.12em 0.4em;
+        border-radius: 4px;
+      }
+
+      .badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin: 1rem 0 0;
+        max-width: 68ch;
+      }
+
+      .badge {
+        font-family: var(--font-mono);
+        font-size: 0.6875rem;
+        font-weight: 500;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        border: 1px solid var(--border);
+        color: var(--text-tertiary);
+        background: var(--bg-raised);
+        transition:
+          transform 0.3s var(--ease-spring),
+          border-color 0.25s ease,
+          color 0.25s ease,
+          box-shadow 0.3s ease;
+      }
+
+      .badge:hover {
+        transform: translateY(-2px);
+        border-color: rgba(140, 180, 255, 0.35);
+        color: var(--text-secondary);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+      }
+
+      /* Ref line */
+      .ref-line {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px dashed var(--border);
+        font-size: 0.8125rem;
+        color: var(--text-tertiary);
+        max-width: 68ch;
+      }
+
+      .ref-line a {
+        color: var(--link);
+        text-decoration: none;
+        border: none;
+      }
+
+      .ref-line a:hover {
+        text-decoration: underline;
+        color: var(--link-hover);
+      }
+
+      /* Footer */
+      footer.site-footer {
+        margin-top: 2rem;
+        padding: 2.5rem 0 3.5rem;
+        border-top: 1px solid var(--border-strong);
+      }
+
+      .footer-grid {
+        display: grid;
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+      }
+
+      @media (min-width: 560px) {
+        .footer-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .footer-col h3 {
+        margin: 0 0 0.6rem;
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+      }
+
+      .footer-col p,
+      .footer-col a {
+        font-size: 0.8125rem;
+        line-height: 1.55;
+        color: var(--text-secondary);
+      }
+
+      .footer-col a {
+        display: inline-block;
+        color: var(--link);
+        text-decoration: none;
+        border: none;
+        margin-right: 0.75rem;
+      }
+
+      .footer-col a:hover {
+        text-decoration: underline;
+        color: var(--link-hover);
+      }
+
+      .icon-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.85rem;
+        text-align: center;
+        padding-top: 1rem;
+      }
+
+      .icon-wrap img {
+        width: 72px;
+        height: 72px;
+        border-radius: 18px;
+        box-shadow:
+          0 0 0 1px var(--border-strong),
+          0 20px 40px rgba(0, 0, 0, 0.5);
+        transition:
+          transform 0.5s var(--ease-out-expo),
+          box-shadow 0.5s var(--ease-out-expo);
+        animation: icon-float 5s ease-in-out infinite;
+      }
+
+      .icon-wrap:hover img {
+        animation: none;
+        transform: scale(1.06) translateY(-4px);
+        box-shadow:
+          0 0 0 1px rgba(140, 180, 255, 0.25),
+          0 28px 56px rgba(0, 0, 0, 0.55),
+          0 0 48px rgba(140, 180, 255, 0.12);
+      }
+
+      .icon-caption {
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+      }
+
+      .icon-sub {
+        font-size: 0.8125rem;
+        color: var(--text-tertiary);
+        max-width: 320px;
+        line-height: 1.5;
+      }
+
+      a {
+        color: var(--link);
+        text-decoration: underline;
+        text-underline-offset: 0.2em;
+      }
+
+      article.doc a {
+        text-decoration: none;
+        border-bottom: 1px solid rgba(140, 180, 255, 0.35);
+      }
+
+      article.doc a:hover {
+        color: var(--link-hover);
+        border-bottom-color: var(--link-hover);
+      }
+    </style>
+  </head>
+  <body data-lang="en">
+    <div class="ambient" aria-hidden="true"></div>
+    <div class="i18n-flash-layer" id="i18n-flash" aria-hidden="true"></div>
+    <a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+
+    <header class="site-header">
+      <a class="brand" href="#top">Apple 3D UI Previewer <span class="muted" data-i18n="brand_muted">/ Brief</span></a>
+      <div class="header-actions">
+        <div class="lang-switch" role="group" data-i18n-aria="aria_lang">
+          <button type="button" class="lang-btn is-active" data-set-lang="en" aria-pressed="true">EN</button>
+          <button type="button" class="lang-btn" data-set-lang="zh" aria-pressed="false">中文</button>
+        </div>
+        <span class="header-meta" aria-hidden="true">static · export</span>
+      </div>
+    </header>
+
+    <div id="top">
+      <div class="hero">
+        <div class="hero-aurora" aria-hidden="true"></div>
+        <div class="hero-beam" aria-hidden="true"></div>
+        <div class="hero-inner">
+          <nav class="breadcrumb reveal" style="--reveal-delay: 0ms" data-i18n-aria="aria_bc" aria-label="Breadcrumb">
+            <a href="#top" data-i18n="bc_doc">Docs</a>
+            <span class="sep" aria-hidden="true">/</span>
+            <span data-i18n="bc_product">Product brief</span>
+            <span class="sep" aria-hidden="true">/</span>
+            <span data-i18n="bc_tail">Rationale &amp; delivery</span>
+          </nav>
+          <h1 class="reveal" style="--reveal-delay: 90ms">Apple 3D UI Previewer</h1>
+          <p class="hero-tagline reveal" style="--reveal-delay: 180ms" data-i18n="hero_tagline">
+            Preview UI mockups in the browser with <strong>real-time 3D</strong>, orbit to any viewing angle, and <strong>export PNG</strong>. Built for workflows that need <strong>multi-angle, archivable presentation assets</strong>—instead of a single flat comp, fixed-angle device frames, or redoing Photoshop composites every time.
+          </p>
+          <dl class="hero-panels">
+            <div class="spec-card reveal" style="--reveal-delay: 280ms">
+              <dt data-i18n="spec1_dt">Deployment</dt>
+              <dd data-i18n="spec1_dd">Web app · static export &amp; static hosting</dd>
+            </div>
+            <div class="spec-card reveal" style="--reveal-delay: 370ms">
+              <dt data-i18n="spec2_dt">Core deliverable</dt>
+              <dd data-i18n="spec2_dd">Bitmap (PNG) exports per camera angle</dd>
+            </div>
+            <div class="spec-card reveal" style="--reveal-delay: 460ms">
+              <dt data-i18n="spec3_dt">UI language</dt>
+              <dd data-i18n="spec3_dd">English / 中文 toggle</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <div class="doc-shell">
+        <aside class="toc reveal" style="--reveal-delay: 0ms" data-i18n-aria="aria_toc" aria-label="On this page">
+          <p class="toc-title" data-i18n="toc_title">On this page</p>
+          <ul>
+            <li><a href="#overview" data-i18n="toc_1">Overview &amp; rationale</a></li>
+            <li><a href="#workflow" data-i18n="toc_2">Role in VCD workflows</a></li>
+            <li><a href="#thinking" data-i18n="toc_3">Design thinking</a></li>
+            <li><a href="#ux" data-i18n="toc_4">UI/UX decisions</a></li>
+            <li><a href="#stack" data-i18n="toc_5">Stack &amp; build</a></li>
+          </ul>
+        </aside>
+
+        <article id="main" class="doc">
+          <section id="overview" class="doc-section reveal" style="--reveal-delay: 0ms">
+            <h2 data-i18n="overview_h2">Overview &amp; rationale</h2>
+            <p data-i18n="overview_p1">
+              In proposals, reviews, and print, UI work is often shown with <strong>2D comps</strong> or <strong>fixed-angle device mockups</strong>. Changing the angle usually means re-mapping textures, perspective, and light. Many tools stop at a single “hero still,” making it hard to judge whether hierarchy and brand elements still read under the same scale and lighting when the camera moves.
+            </p>
+            <p data-i18n="overview_p2">
+              This tool frames the problem as: preview the interface in a <strong>controlled 3D scene</strong> and close the loop with <strong>PNG export</strong>—so multi-angle assets are the default, not a one-off composite every time.
+            </p>
+            <div class="notecard">
+              <p class="notecard-title" data-i18n="notecard_t">Design note</p>
+              <p data-i18n="notecard_p">
+                Unlike “live in the scene editor” tools, interactions prioritise <strong>set angle → export → reuse</strong>; the stack is chosen for stable in-browser execution and static hosting.
+              </p>
+            </div>
+          </section>
+
+          <section id="workflow" class="doc-section reveal" style="--reveal-delay: 0ms">
+            <h2 data-i18n="workflow_h2">Role in visual communication workflows</h2>
+            <ul>
+              <li data-i18n="w_li1"><strong>Proposals &amp; pitches</strong> — Export PNGs from multiple viewing angles for decks, PDFs, or print.</li>
+              <li data-i18n="w_li2"><strong>Review &amp; iteration</strong> — Orbit to check hierarchy and whitespace in 3D composition, not only a single mockup still.</li>
+              <li data-i18n="w_li3"><strong>Asset handoff</strong> — Versionable stills; new angles do not require redoing the entire composite pipeline.</li>
+              <li data-i18n="w_li4"><strong>Pipeline fit</strong> — Screen design stays in 2D tools; this covers <strong>flat artwork → multi-angle device presentation</strong>.</li>
+            </ul>
+          </section>
+
+          <section id="thinking" class="doc-section reveal" style="--reveal-delay: 0ms">
+            <h2 data-i18n="thinking_h2">Design thinking</h2>
+            <p data-i18n="thinking_p1">
+              <strong>Problem framing.</strong> Many workflows force a choice between <strong>flat output</strong> and <strong>fixed-angle templates</strong>. What is missing is a lightweight path for <strong>the same content, continuously adjustable angle, PNG as the deliverable</strong>.
+            </p>
+            <p data-i18n="thinking_p2">
+              <strong>Direction.</strong> In-browser 3D preview plus an interaction model oriented to <strong>export</strong>, reducing reliance on heavy DCC apps or per-frame Photoshop work.
+            </p>
+          </section>
+
+          <section id="ux" class="doc-section reveal" style="--reveal-delay: 0ms">
+            <h2 data-i18n="ux_h2">UI/UX decisions</h2>
+            <p data-i18n="ux_intro">The following choices map directly to <strong>multi-angle PNG delivery</strong> and legibility.</p>
+            <table class="props-table">
+              <thead>
+                <tr>
+                  <th scope="col" data-i18n="tbl_h1">Decision</th>
+                  <th scope="col" data-i18n="tbl_h2">Rationale</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row" data-i18n="ux_r1a">Orbit + PNG export</th>
+                  <td data-i18n="ux_r1b">Core loop is <strong>find the angle → export</strong>; output is tied to multi-angle value.</td>
+                </tr>
+                <tr>
+                  <th scope="row" data-i18n="ux_r2a">Grouped screen-mapped adjustments</th>
+                  <td data-i18n="ux_r2b">Brightness, scale, nudge, etc. directly affect each export.</td>
+                </tr>
+                <tr>
+                  <th scope="row" data-i18n="ux_r3a">Global / chromeless preview</th>
+                  <td data-i18n="ux_r3b">Maximise frame control before export; keep UI chrome out of shot.</td>
+                </tr>
+                <tr>
+                  <th scope="row" data-i18n="ux_r4a">Fit / Fill &amp; orientation</th>
+                  <td data-i18n="ux_r4b">Surfaces crop and aspect explicitly for discussion under different media constraints.</td>
+                </tr>
+                <tr>
+                  <th scope="row" data-i18n="ux_r5a">English / 中文 UI</th>
+                  <td data-i18n="ux_r5b">Lowers friction for mixed-language reviews and handoffs.</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section id="stack" class="doc-section reveal" style="--reveal-delay: 0ms">
+            <h2 data-i18n="stack_h2">Stack &amp; build</h2>
+            <p data-i18n="stack_p">Runtime and toolchain (as in the repository):</p>
+            <div class="badge-row" data-i18n-aria="aria_badges" aria-label="Technology tags">
+              <span class="badge">Next.js 15</span>
+              <span class="badge">React 19</span>
+              <span class="badge">TypeScript</span>
+              <span class="badge">Tailwind CSS</span>
+              <span class="badge">R3F</span>
+              <span class="badge">drei</span>
+              <span class="badge">Three.js</span>
+              <span class="badge">Zustand</span>
+            </div>
+            <div class="codeblock-wrap">
+              <pre class="codeblock" tabindex="0"><span class="c" data-i18n="code_comment"># Local dev &amp; static export (see README)</span>
+<span class="k">npm</span> run dev
+<span class="k">npm</span> run export:static
+<span class="k">npm</span> run serve:static</pre>
+            </div>
+            <p data-i18n="stack_readme_p">
+              Build instructions and dependencies: see <span class="inline-code">README.md</span> at the repository root.
+            </p>
+            <p class="ref-line" data-i18n="ref_line">
+              Layout and information architecture echo common developer-documentation patterns (e.g. navigation, side TOC, and note cards on
+              <a href="https://developer.mozilla.org/en-US/" rel="noopener noreferrer">MDN Web Docs</a>)
+              for scanability.
+            </p>
+          </section>
+
+          <footer class="site-footer reveal" style="--reveal-delay: 0ms">
+            <div class="footer-grid">
+              <div class="footer-col">
+                <h3 data-i18n="foot_h1">Resources</h3>
+                <p data-i18n="foot_p1">Build &amp; run: see <span class="inline-code">README.md</span> at the repo root (open locally after clone).</p>
+                <p data-i18n="foot_p2">Static export output: <span class="inline-code">out/</span></p>
+              </div>
+              <div class="footer-col">
+                <h3 data-i18n="foot_h2">Assets</h3>
+                <p data-i18n="foot_p3">Launch icon: <span class="inline-code">app-icon.svg</span> — deploy next to this page.</p>
+              </div>
+            </div>
+
+            <div class="icon-wrap reveal" style="--reveal-delay: 160ms">
+              <img
+                src="app-icon.svg"
+                width="72"
+                height="72"
+                alt="Apple 3D UI Previewer app icon"
+                data-i18n-alt="icon_alt"
+                loading="lazy"
+                decoding="async"
+              />
+              <span class="icon-caption" data-i18n="icon_cap">Launch icon</span>
+              <span class="icon-sub" data-i18n="icon_sub">App icon · placed at page bottom (<span class="inline-code">app-icon.svg</span>)</span>
+            </div>
+          </footer>
+        </article>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var header = document.querySelector(".site-header");
+        var sectionIds = ["overview", "workflow", "thinking", "ux", "stack"];
+        var metaDesc = document.querySelector('meta[name="description"]');
+        var flashLayer = document.getElementById("i18n-flash");
+        var topEl = document.getElementById("top");
+
+        var ARIA = {
+          en: {
+            aria_bc: "Breadcrumb",
+            aria_toc: "On this page",
+            aria_badges: "Technology tags",
+            aria_lang: "Language",
+          },
+          zh: {
+            aria_bc: "面包屑",
+            aria_toc: "本页目录",
+            aria_badges: "技术标签",
+            aria_lang: "语言",
+          },
+        };
+
+        var DOC = {
+          en: {
+            title: "Apple 3D UI Previewer — Product brief",
+            desc: "Preview UI mockups in 3D in the browser and export PNGs from any angle. Built for visual communication and presentation workflows.",
+          },
+          zh: {
+            title: "Apple 3D UI Previewer — 产品说明",
+            desc: "在浏览器中以 3D 预览界面稿，并按多角度导出 PNG。面向视觉传达与界面展示流程。",
+          },
+        };
+
+        var ZH = {
+          skip: "跳到正文",
+          brand_muted: "/ 说明",
+          bc_doc: "文档",
+          bc_product: "产品说明",
+          bc_tail: "设计动机与交付",
+          hero_tagline:
+            "在浏览器中以<strong>实时 3D</strong>预览界面稿，旋转至任意观看角度并<strong>导出 PNG</strong>。面向需要<strong>多视角、可归档展示素材</strong>的视觉传达与界面展示——替代单一固定样机与反复 PS 合成。",
+          spec1_dt: "部署形态",
+          spec1_dd: "Web 应用 · 支持静态导出与静态托管",
+          spec2_dt: "核心交付物",
+          spec2_dd: "按视角导出的位图（PNG）",
+          spec3_dt: "界面语言",
+          spec3_dd: "中文 / English 切换",
+          toc_title: "本页内容",
+          toc_1: "概述与动机",
+          toc_2: "在 VCD 流程中的位置",
+          toc_3: "设计思考",
+          toc_4: "UI/UX 决策",
+          toc_5: "技术栈与构建",
+          overview_h2: "概述与动机",
+          overview_p1:
+            "提案、评审与出版物中的界面展示，长期依赖<strong>二维合成</strong>或<strong>固定角度样机</strong>：视角一变，往往要重新贴图并对齐透视与光影。许多工具止步于「一张标准正面图」，难以在同一套比例与光照下，检验「换角度后层级与品牌元素是否仍然成立」。",
+          overview_p2:
+            "本工具将问题收敛为：在<strong>可控 3D 场景</strong>中预览界面，并以<strong>导出 PNG</strong>为闭环——使多视角素材成为默认能力，而非每次从零手工合成。",
+          notecard_t: "设计要点",
+          notecard_p:
+            "与「在场景里长时间编辑」不同，交互优先服务<strong>定角度 → 出图 → 复用</strong>；技术选型服务于可在浏览器内稳定运行与静态部署。",
+          workflow_h2: "在视觉传达流程中的位置",
+          w_li1: "<strong>提案与比稿</strong> — 同一界面在多个观看角下各导出 PNG，用于幻灯、PDF 或印刷说明。",
+          w_li2: "<strong>评审与迭代</strong> — 旋转检视立体构图中的可读性与留白，而非仅依赖单张 mockup。",
+          w_li3: "<strong>资产沉淀</strong> — 输出可版本管理的静帧组；改视角不必整版重做合成流程。",
+          w_li4: "<strong>与既有工作流衔接</strong> — 界面设计仍在二维工具中完成；本工具负责「平面稿 → 多视角设备呈现」。",
+          thinking_h2: "设计思考",
+          thinking_p1:
+            "<strong>界定问题。</strong>常见路径在「纯平面输出」与「固定角度模板」之间二选一；缺口是<strong>同一内容、连续可调视角、以 PNG 为交付</strong>的轻量链路。",
+          thinking_p2:
+            "<strong>方向。</strong>浏览器内 3D 预览 + 以导出为结果导向的交互模型，降低对重型 DCC 或逐张 PS 的依赖。",
+          ux_h2: "UI/UX 决策",
+          ux_intro: "以下决策直接对应「多视角 PNG 交付」与可读性目标。",
+          tbl_h1: "决策",
+          tbl_h2: "说明",
+          ux_r1a: "轨道旋转 + 导出 PNG",
+          ux_r1b: "核心闭环为「找角度 → 出图」；导出与多视角价值强绑定。",
+          ux_r2a: "贴屏参数集中调节",
+          ux_r2b: "明暗、缩放、位移等直接影响每张导出图的观感与可读性。",
+          ux_r3a: "全局预览 / 减干扰",
+          ux_r3b: "导出前最大化画幅可控性，避免工具 chrome 进入构图。",
+          ux_r4a: "Fit / Fill 与横竖屏",
+          ux_r4b: "显式暴露裁切与比例变量，便于讨论媒介约束下的传达效果。",
+          ux_r5a: "中英双语",
+          ux_r5b: "降低协作与评审中的理解与操作成本。",
+          stack_h2: "技术栈与构建",
+          stack_p: "运行时与工具链（与仓库一致）：",
+          code_comment: "# 本地开发与静态导出（参见仓库 README）",
+          stack_readme_p: "构建说明与依赖安装见仓库根目录 <span class=\"inline-code\">README.md</span>。",
+          ref_line:
+            "版式与信息架构参考开发者文档站常见模式（例如 <a href=\"https://developer.mozilla.org/zh-CN/\" rel=\"noopener noreferrer\">MDN Web Docs</a> 的导航、侧栏目录与标注块结构），以保持技术可读性与可扫描性。",
+          foot_h1: "资源",
+          foot_p1: "构建与运行说明见仓库根目录 <span class=\"inline-code\">README.md</span>（克隆本地后打开）。",
+          foot_p2: "静态导出输出目录：<span class=\"inline-code\">out/</span>",
+          foot_h2: "图标资源",
+          foot_p3: "启动图标文件：<span class=\"inline-code\">app-icon.svg</span>，与本页同目录部署即可被引用。",
+          icon_alt: "Apple 3D UI Previewer 应用图标",
+          icon_cap: "启动图标",
+          icon_sub: "应用启动图标 · 置于页面底部（<span class=\"inline-code\">app-icon.svg</span>）",
+        };
+
+        function setVisible(el) {
+          el.classList.add("is-visible");
+        }
+
+        if (reduced) {
+          document.querySelectorAll(".reveal, .doc-section").forEach(setVisible);
+        } else {
+          var revealIo = new IntersectionObserver(
+            function (entries, obs) {
+              entries.forEach(function (entry) {
+                if (!entry.isIntersecting) return;
+                setVisible(entry.target);
+                obs.unobserve(entry.target);
+              });
+            },
+            { rootMargin: "0px 0px -6% 0px", threshold: 0.06 }
+          );
+          document.querySelectorAll(".reveal").forEach(function (el) {
+            revealIo.observe(el);
+          });
+        }
+
+        function playLangFx() {
+          if (reduced) return;
+          if (flashLayer) {
+            flashLayer.classList.remove("is-on");
+            void flashLayer.offsetWidth;
+            flashLayer.classList.add("is-on");
+          }
+          if (topEl) {
+            topEl.classList.remove("i18n-snap");
+            void topEl.offsetWidth;
+            topEl.classList.add("i18n-snap");
+            window.setTimeout(function () {
+              topEl.classList.remove("i18n-snap");
+            }, 480);
+          }
+        }
+
+        function setLang(lang, opts) {
+          opts = opts || {};
+          var isZh = lang === "zh";
+          document.documentElement.lang = isZh ? "zh-Hans" : "en";
+          document.body.dataset.lang = lang;
+
+          document.querySelectorAll("[data-i18n]").forEach(function (el) {
+            var key = el.getAttribute("data-i18n");
+            if (!key || !ZH[key]) return;
+            if (isZh) {
+              if (el.dataset.enBackup == null) el.dataset.enBackup = el.innerHTML;
+              el.innerHTML = ZH[key];
+            } else if (el.dataset.enBackup != null) {
+              el.innerHTML = el.dataset.enBackup;
+            }
+          });
+
+          document.querySelectorAll("[data-i18n-aria]").forEach(function (el) {
+            var k = el.getAttribute("data-i18n-aria");
+            if (!k) return;
+            var map = ARIA[isZh ? "zh" : "en"];
+            if (map[k]) el.setAttribute("aria-label", map[k]);
+          });
+
+          document.querySelectorAll("[data-i18n-alt]").forEach(function (el) {
+            var key = el.getAttribute("data-i18n-alt");
+            if (!key || !ZH[key]) return;
+            if (isZh) {
+              if (el.dataset.altEn == null) el.dataset.altEn = el.getAttribute("alt") || "";
+              el.setAttribute("alt", ZH[key]);
+            } else if (el.dataset.altEn != null) {
+              el.setAttribute("alt", el.dataset.altEn);
+            }
+          });
+
+          var pack = DOC[isZh ? "zh" : "en"];
+          document.title = pack.title;
+          if (metaDesc) metaDesc.setAttribute("content", pack.desc);
+
+          document.querySelectorAll(".lang-btn").forEach(function (btn) {
+            var on = btn.getAttribute("data-set-lang") === lang;
+            btn.classList.toggle("is-active", on);
+            btn.setAttribute("aria-pressed", on ? "true" : "false");
+          });
+
+          try {
+            localStorage.setItem("presentation-lang", lang);
+          } catch (e) {}
+
+          if (opts.fx) playLangFx();
+        }
+
+        var saved = null;
+        try {
+          saved = localStorage.getItem("presentation-lang");
+        } catch (e) {}
+        setLang(saved === "zh" ? "zh" : "en", {});
+
+        document.querySelectorAll(".lang-btn").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var lang = btn.getAttribute("data-set-lang");
+            if (!lang || lang === document.body.dataset.lang) return;
+            setLang(lang, { fx: true });
+          });
+        });
+
+        var navLinks = document.querySelectorAll('.toc a[href^="#"]');
+
+        function updateScrollSpy() {
+          if (!header) return;
+          var y = window.scrollY + header.offsetHeight + 48;
+          var current = sectionIds[0];
+          for (var i = 0; i < sectionIds.length; i++) {
+            var el = document.getElementById(sectionIds[i]);
+            if (el && el.offsetTop <= y) current = sectionIds[i];
+          }
+          navLinks.forEach(function (a) {
+            var href = a.getAttribute("href");
+            a.classList.toggle("is-active", href === "#" + current);
+          });
+        }
+
+        var ticking = false;
+        function onScroll() {
+          if (!header) return;
+          if (!ticking) {
+            window.requestAnimationFrame(function () {
+              header.classList.toggle("is-scrolled", window.scrollY > 10);
+              updateScrollSpy();
+              ticking = false;
+            });
+            ticking = true;
+          }
+        }
+
+        window.addEventListener("scroll", onScroll, { passive: true });
+        onScroll();
+        updateScrollSpy();
+      })();
+    </script>
+  </body>
+</html>
