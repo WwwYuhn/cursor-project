@@ -1,3 +1,6 @@
+/** Prefix for GLB URLs on GitHub Pages (`/<repo>/models/...`). Empty when developing locally. */
+const PUBLIC_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 export type DeviceCategory = "iPhone" | "Mac";
 
 export type AppleDevice = {
@@ -21,7 +24,7 @@ export const devices: AppleDevice[] = [
     id: "iphone-16-pro",
     name: "iPhone 16 Pro",
     category: "iPhone",
-    glbPath: "/models/iphone-16-pro.glb",
+    glbPath: `${PUBLIC_BASE}/models/iphone-16-pro.glb`,
     hasRealModel: true,
     screenMeshName: "xXDHkMplTIDAXLN",
     screenAspect: 9 / 19.5,
@@ -36,7 +39,7 @@ export const devices: AppleDevice[] = [
     id: "iphone-16-pro-max",
     name: "iPhone 16 Pro Max",
     category: "iPhone",
-    glbPath: "/models/iphone-16-pro.glb",
+    glbPath: `${PUBLIC_BASE}/models/iphone-16-pro-max.glb`,
     hasRealModel: true,
     screenMeshName: "xXDHkMplTIDAXLN",
     screenAspect: 9 / 19.5,
@@ -51,7 +54,7 @@ export const devices: AppleDevice[] = [
     id: "macbook-pro-14",
     name: "MacBook Pro 14",
     category: "Mac",
-    glbPath: "/models/macbook-pro-14.glb",
+    glbPath: `${PUBLIC_BASE}/models/macbook-pro-14.glb`,
     hasRealModel: true,
     screenMeshName: "Object_123",
     screenAspect: 14 / 9,

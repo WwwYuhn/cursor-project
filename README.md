@@ -50,7 +50,10 @@ A standalone **bilingual** (English default, 中文 optional) product / design r
 - Open [`public/presentation.html`](public/presentation.html) in a browser from a local checkout (same folder as `app-icon.svg` so the icon loads), **or**
 - Run `npm run export:static` then open `out/presentation.html` via a local static server (e.g. `npm run serve:static` and visit `/presentation.html`).
 
-If you host **GitHub Pages** from the `out/` output, the brief page URL is typically `https://<user>.github.io/<repo>/presentation.html` (adjust to your actual base path).
+After you enable **GitHub Pages** (see [GitHub Pages](#github-pages) below), the live URLs use your repo name as the path, for example:
+
+- App: `https://WwwYuhn.github.io/cursor-project/`
+- Product brief: `https://WwwYuhn.github.io/cursor-project/presentation.html`
 
 ## Tech Stack
 
@@ -134,7 +137,28 @@ If any external service is added later, do not commit API keys into the reposito
 
 - **Product brief page (HTML, in repo):** [`public/presentation.html`](public/presentation.html) — see [Product brief (HTML)](#product-brief-html) above
 - **YouTube presentation:** [https://youtu.be/oH-4LvWrNks](https://youtu.be/oH-4LvWrNks)
-- **GitHub Pages** (if used): `（待补充 / To be added）` — optional; the brief is at `/presentation.html` when `out/` is served as site root
+- **GitHub Pages (live demo):** [https://WwwYuhn.github.io/cursor-project/](https://WwwYuhn.github.io/cursor-project/) — same app as static export; brief at [presentation.html](https://WwwYuhn.github.io/cursor-project/presentation.html) *(URL works after Pages is enabled and the first deploy finishes; see [GitHub Pages](#github-pages))*
+
+## GitHub Pages
+
+This repo includes [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml). On every push to `main`, it builds a static export and deploys the `out/` folder to **GitHub Pages**.
+
+### One-time setup (in the GitHub website)
+
+1. Open your repository on GitHub → **Settings** → **Pages** (左侧菜单).
+2. Under **Build and deployment** → **Source**, choose **GitHub Actions**（不要选 “Deploy from a branch” 除非你知道自己在做什么）.
+3. Save if needed. 推送 `main` 后会自动跑工作流。
+
+### Check that it worked
+
+1. 打开 **Actions** 标签页，确认 **Deploy GitHub Pages** 工作流是绿色成功。
+2. 几分钟后访问：**https://WwwYuhn.github.io/cursor-project/**  
+   若 404，再等 1～2 分钟或硬刷新。
+
+### 说明
+
+- 构建时通过环境变量 `GITHUB_REPOSITORY` 自动设置 `basePath` 为 `/cursor-project`，与项目站路径一致。若你**改名仓库**，下次推送会自动按新仓库名重新构建。
+- 本地开发仍用 `npm run dev`，**不需要** basePath；只有 CI 里的 `npm run build` 会带前缀。
 
 ## Group Members
 
@@ -155,7 +179,7 @@ If any external service is added later, do not commit API keys into the reposito
 - [x] Final version prepared for `main` branch
 - [x] README member information completed
 - [x] YouTube presentation link added
-- [ ] Github Pages presentation link added
+- [x] Github Pages presentation link added
 - [x] Final repository link confirmed
 
 ## Notes

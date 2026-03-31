@@ -21,7 +21,7 @@
   "bugs": {
     "url": "https://github.com/WwwYuhn/cursor-project/issues"
   },
-  "homepage": "https://github.com/WwwYuhn/cursor-project#readme",
+  "homepage": "https://WwwYuhn.github.io/cursor-project/",
   "dependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
