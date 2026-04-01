@@ -50,10 +50,11 @@ A standalone **bilingual** (English default, 中文 optional) product / design r
 - Open [`public/presentation.html`](public/presentation.html) in a browser from a local checkout (same folder as `app-icon.svg` so the icon loads), **or**
 - Run `npm run export:static` then open `out/presentation.html` via a local static server (e.g. `npm run serve:static` and visit `/presentation.html`).
 
-After you enable **GitHub Pages** (see [GitHub Pages](#github-pages) below), the live URLs use your repo name as the path, for example:
+After you enable **GitHub Pages** (see [GitHub Pages](#github-pages) below), the **site root** is the bilingual product brief (same content as `public/presentation.html`), for example:
 
-- App: `https://WwwYuhn.github.io/cursor-project/`
-- Product brief: `https://WwwYuhn.github.io/cursor-project/presentation.html`
+- **Live brief (GitHub Pages):** `https://WwwYuhn.github.io/cursor-project/`
+
+The interactive 3D app is **not** on that URL; run it locally with `npm run dev` or `npm run export:static` + `npm run serve:static`.
 
 ## Tech Stack
 
@@ -137,11 +138,11 @@ If any external service is added later, do not commit API keys into the reposito
 
 - **Product brief page (HTML, in repo):** [`public/presentation.html`](public/presentation.html) — see [Product brief (HTML)](#product-brief-html) above
 - **YouTube presentation:** [https://youtu.be/oH-4LvWrNks](https://youtu.be/oH-4LvWrNks)
-- **GitHub Pages (live demo):** [https://WwwYuhn.github.io/cursor-project/](https://WwwYuhn.github.io/cursor-project/) — same app as static export; brief at [presentation.html](https://WwwYuhn.github.io/cursor-project/presentation.html) *(URL works after Pages is enabled and the first deploy finishes; see [GitHub Pages](#github-pages))*
+- **GitHub Pages (product brief):** [https://WwwYuhn.github.io/cursor-project/](https://WwwYuhn.github.io/cursor-project/) — this is the bilingual `presentation.html` as the site homepage *(after Pages + Actions deploy; see [GitHub Pages](#github-pages))*
 
 ## GitHub Pages
 
-This repo includes [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml). On every push to `main`, it builds a static export and deploys the `out/` folder to **GitHub Pages**.
+This repo includes [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml). On every push to `main`, it deploys **`public/presentation.html`** (copied as `index.html`) and **`public/app-icon.svg`** to **GitHub Pages** — so the URL opens the **product / design brief**, not the Next.js 3D app.
 
 ### One-time setup (in the GitHub website)
 
@@ -157,8 +158,8 @@ This repo includes [`.github/workflows/deploy-pages.yml`](.github/workflows/depl
 
 ### 说明
 
-- 构建时通过环境变量 `GITHUB_REPOSITORY` 自动设置 `basePath` 为 `/cursor-project`，与项目站路径一致。若你**改名仓库**，下次推送会自动按新仓库名重新构建。
-- 本地开发仍用 `npm run dev`，**不需要** basePath；只有 CI 里的 `npm run build` 会带前缀。
+- **GitHub Pages = 说明页**：与仓库里 [`public/presentation.html`](public/presentation.html) 内容一致（中英切换、设计说明）。
+- **3D 应用**：在本地 `npm run dev`，或 `npm run export:static` 后用 `npm run serve:static` 查看 `out/`。
 
 ## Group Members
 

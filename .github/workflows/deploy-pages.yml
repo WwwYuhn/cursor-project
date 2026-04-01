@@ -1,5 +1,5 @@
-# Build static export and deploy to GitHub Pages (project site: /<repo>/)
-# After first push: Repo → Settings → Pages → Build: GitHub Actions → Save
+# Deploy the bilingual product brief (public/presentation.html) as GitHub Pages site root.
+# After first push: Repo → Settings → Pages → Source: GitHub Actions
 
 name: Deploy GitHub Pages
 
@@ -23,22 +23,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build static export
-        run: npm run build
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
+      - name: Prepare Pages site (presentation brief only)
+        run: |
+          mkdir -p site
+          cp public/presentation.html site/index.html
+          cp public/app-icon.svg site/app-icon.svg
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: out
+          path: site
 
   deploy:
     needs: build
