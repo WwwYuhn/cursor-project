@@ -23,6 +23,7 @@ import {
   useGLTF,
   useBounds,
 } from "@react-three/drei";
+import { withBasePath } from "@/lib/basePath";
 import { t } from "@/lib/i18n";
 import { getDeviceById, type AppleDevice } from "@/lib/devices";
 import {
@@ -408,7 +409,7 @@ function GltfDevice({
   screenTexture: THREE.Texture;
   previewOrientation: "portrait" | "landscape";
 }) {
-  const gltf = useGLTF(device.glbPath);
+  const gltf = useGLTF(withBasePath(device.glbPath));
   const clonedScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
   const screenMaterialsRef = useRef<THREE.MeshStandardMaterial[]>([]);
   const rotation = useMemo<[number, number, number]>(() => {
